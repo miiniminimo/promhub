@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ForkButton } from "@/components/ForkButton";
 import { PromptBlock } from "@/components/PromptBlock";
 import { StyleTag } from "@/components/StyleTag";
 import { getPost } from "@/lib/posts";
@@ -41,6 +42,8 @@ export default async function PostPage(props: PageProps<"/p/[id]">) {
             @{post.author} · ♥ {post.likes.toLocaleString()} · {post.createdAt.slice(0, 10)}
           </p>
         </div>
+
+        <ForkButton postId={post.id} />
 
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-tile border border-frame bg-frame">
           <div className="col-span-2 bg-canvas px-4 py-3">

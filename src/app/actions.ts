@@ -1,8 +1,12 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createSession, destroySession, hashPassword, verifyPassword } from "@/lib/server/auth";
+import { getPost } from "@/lib/posts";
+import { createSession, destroySession, hashPassword, requireUser, verifyPassword } from "@/lib/server/auth";
 import { db } from "@/lib/server/db";
+import { addCommit, createRepo, forkPost, forkRepo, getRepo, saveImage, setVisibility, slugify } from "@/lib/server/repos";
+import type { Style } from "@/lib/types";
 
 export type FormState = { error?: string; username?: string } | undefined;
 
@@ -48,4 +52,89 @@ export async function login(_: FormState, formData: FormData): Promise<FormState
 export async function logout() {
   await destroySession();
   redirect("/");
+}
+
+// ---------- Repos ----------
+
+export async function forkPostAction(postId: string) {
+  const user = await requireUser(`/p/${postId}`);
+  const post = getPost(postId);
+  if (!post) throw new Error("Post not found");
+  redirect(`/repos/${forkPost(user.id, post)}`);
+}
+
+export async function forkRepoAction(repoId: number) {
+  const user = await requireUser(`/repos/${repoId}`);
+  const source = getRepo(repoId, user.id);
+  if (!source) throw new Error("Repo not found");
+  redirect(`/repos/${forkRepo(user.id, source)}`);
+}
+
+async function ownedRepo(repoId: number) {
+  const user = await requireUser(`/repos/${repoId}`);
+  const repo = getRepo(repoId, user.id);
+  if (!repo || repo.ownerId !== user.id) throw new Error("Not your repo");
+  return repo;
+}
+
+export async function commitAction(repoId: number, _: FormState, formData: FormData): Promise<FormState> {
+  await ownedRepo(repoId);
+  const prompt = String(formData.get("prompt") ?? "").trim();
+  const negativePrompt = String(formData.get("negativePrompt") ?? "").trim();
+  if (!prompt) return { error: "프롬프트를 입력해주세요." };
+
+  addCommit(repoId, {
+    message: String(formData.get("message") ?? "").trim() || "Update prompt",
+    prompt,
+    negativePrompt: negativePrompt || null,
+  });
+  redirect(`/repos/${repoId}`);
+}
+
+export async function toggleVisibilityAction(repoId: number) {
+  const repo = await ownedRepo(repoId);
+  setVisibility(repoId, repo.visibility === "public" ? "private" : "public");
+  revalidatePath("/", "layout");
+}
+
+const STYLES: Style[] = ["anime", "photo", "illustration"];
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+export async function createRepoAction(_: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser("/new");
+  const title = String(formData.get("title") ?? "").trim();
+  const model = String(formData.get("model") ?? "").trim();
+  const style = String(formData.get("style")) as Style;
+  const prompt = String(formData.get("prompt") ?? "").trim();
+  const negativePrompt = String(formData.get("negativePrompt") ?? "").trim();
+  const visibility = formData.get("visibility") === "private" ? "private" : "public";
+  if (!title || !model || !prompt) return { error: "제목, 사용 모델, 프롬프트는 필수입니다." };
+  if (!STYLES.includes(style)) return { error: "스타일을 선택해주세요." };
+
+  let cover = null;
+  const file = formData.get("image");
+  if (file instanceof File && file.size > 0) {
+    if (!file.type.startsWith("image/")) return { error: "이미지 파일만 올릴 수 있습니다." };
+    if (file.size > MAX_IMAGE_BYTES) return { error: "이미지는 5MB 이하만 올릴 수 있습니다." };
+    const imageId = saveImage(user.id, file.type, Buffer.from(await file.arrayBuffer()));
+    cover = {
+      src: `/api/images/${imageId}`,
+      width: Number(formData.get("imageWidth")) || 1024,
+      height: Number(formData.get("imageHeight")) || 1024,
+    };
+  }
+
+  const repoId = createRepo({
+    ownerId: user.id,
+    name: slugify(title),
+    description: title,
+    model,
+    style,
+    cover,
+    visibility,
+    prompt,
+    negativePrompt: negativePrompt || null,
+    message: "Initial commit",
+  });
+  redirect(`/repos/${repoId}`);
 }
