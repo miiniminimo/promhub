@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { logout } from "@/app/actions";
 import { getCurrentUser } from "@/lib/server/auth";
 
 const NAV = [
@@ -27,15 +26,9 @@ export async function Header() {
           placeholder="Search prompts"
           className="ml-auto hidden w-60 rounded-tag border border-secondary bg-canvas px-3 py-1.5 text-[15px] placeholder:text-secondary transition-colors duration-150 focus:border-mint focus:outline-none lg:block"
         />
-        {user ? (
-          <form action={logout} className="ml-auto lg:ml-0">
-            <button className="label-mono link-hover text-xs">Log out</button>
-          </form>
-        ) : (
-          <Link href="/login" className="label-mono link-hover ml-auto text-xs lg:ml-0">
-            Log in
-          </Link>
-        )}
+        <Link href={user ? "/me" : "/login"} className="label-mono link-hover ml-auto text-xs lg:ml-0">
+          {user ? "My Page" : "Log in"}
+        </Link>
         <Link href="/new" className="btn-mint">
           New Prompt
         </Link>

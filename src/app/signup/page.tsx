@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/server/auth";
 
 export default async function Page(props: PageProps<"/signup">) {
   const { next } = await props.searchParams;
-  const nextPath = typeof next === "string" ? next : "/";
+  const nextPath = typeof next === "string" ? next : "/me";
   if (await getCurrentUser()) redirect(nextPath);
 
   return (

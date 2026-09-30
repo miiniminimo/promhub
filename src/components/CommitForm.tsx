@@ -1,0 +1,53 @@
+"use client";
+
+import Link from "next/link";
+import { useActionState, useState } from "react";
+import { commitAction } from "@/app/actions";
+import { fieldClass, monoFieldClass } from "./ui";
+
+type Props = { repoId: number; prompt: string; negativePrompt: string | null };
+
+export function CommitForm({ repoId, prompt: initialPrompt, negativePrompt: initialNegative }: Props) {
+  const [state, action, pending] = useActionState(commitAction.bind(null, repoId), undefined);
+  const [prompt, setPrompt] = useState(initialPrompt);
+  const [negativePrompt, setNegativePrompt] = useState(initialNegative ?? "");
+  const unchanged = prompt.trim() === initialPrompt && negativePrompt.trim() === (initialNegative ?? "");
+
+  return (
+    <form action={action} className="space-y-4">
+      <label className="block">
+        <span className="label-mono text-secondary">Prompt</span>
+        <textarea
+          name="prompt"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          rows={9}
+          className={`${monoFieldClass} mt-2`}
+        />
+      </label>
+      <label className="block">
+        <span className="label-mono text-secondary">Negative prompt</span>
+        <textarea
+          name="negativePrompt"
+          value={negativePrompt}
+          onChange={(e) => setNegativePrompt(e.target.value)}
+          rows={3}
+          className={`${monoFieldClass} mt-2`}
+        />
+      </label>
+      <label className="block">
+        <span className="label-mono text-secondary">Commit message</span>
+        <input name="message" placeholder="예: 조명을 golden hour 로 변경" className={`${fieldClass} mt-2`} />
+      </label>
+      {state?.error && <p className="text-sm text-muted">{state.error}</p>}
+      <div className="flex gap-3">
+        <button type="submit" disabled={unchanged || pending} className="btn-mint disabled:opacity-40">
+          커밋
+        </button>
+        <Link href={`/repos/${repoId}`} className="label-mono rounded-[24px] bg-slate px-5 py-2 leading-[2] text-muted">
+          취소
+        </Link>
+      </div>
+    </form>
+  );
+}

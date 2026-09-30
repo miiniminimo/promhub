@@ -1,8 +1,19 @@
 import { Feed } from "@/components/Feed";
 import { POSTS } from "@/lib/posts";
+import { listPublicOriginals } from "@/lib/server/repos";
 import type { FeedItem } from "@/lib/types";
 
 export default function Home() {
+  const userPrompts: FeedItem[] = listPublicOriginals().map((r) => ({
+    key: `repo-${r.id}`,
+    href: `/repos/${r.id}`,
+    title: r.description,
+    author: r.owner,
+    style: r.style,
+    cover: r.cover,
+    likes: null,
+    excerpt: r.headPrompt,
+  }));
   const civitai: FeedItem[] = POSTS.map((p) => ({
     key: `post-${p.id}`,
     href: `/p/${p.id}`,
@@ -24,7 +35,7 @@ export default function Home() {
           Prompts that ship.
         </h1>
       </section>
-      <Feed items={civitai} />
+      <Feed items={[...userPrompts, ...civitai]} />
     </main>
   );
 }
