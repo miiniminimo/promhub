@@ -1,4 +1,19 @@
+import { Feed } from "@/components/Feed";
+import { POSTS } from "@/lib/posts";
+import type { FeedItem } from "@/lib/types";
+
 export default function Home() {
+  const civitai: FeedItem[] = POSTS.map((p) => ({
+    key: `post-${p.id}`,
+    href: `/p/${p.id}`,
+    title: p.title,
+    author: p.author,
+    style: p.style,
+    cover: p.images[0],
+    likes: p.likes,
+    excerpt: p.prompt,
+  }));
+
   return (
     <main className="mx-auto w-full max-w-[1300px] px-6 lg:px-12">
       <section className="py-12 lg:py-16">
@@ -9,6 +24,7 @@ export default function Home() {
           Prompts that ship.
         </h1>
       </section>
+      <Feed items={civitai} />
     </main>
   );
 }
