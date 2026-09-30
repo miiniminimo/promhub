@@ -5,6 +5,7 @@ import { StyleTag } from "@/components/StyleTag";
 import { VisibilityToggle } from "@/components/VisibilityToggle";
 import { requireUser } from "@/lib/server/auth";
 import { listUserRepos, type RepoSummary } from "@/lib/server/repos";
+import { testSummary } from "@/lib/server/submissions";
 
 const TABS = [
   { value: "original", label: "내가 오픈한 프롬프트" },
@@ -20,6 +21,7 @@ export default async function MyPage(props: PageProps<"/me">) {
   const originals = repos.filter((r) => !r.forkedLabel);
   const forks = repos.filter((r) => r.forkedLabel);
   const shown = current === "fork" ? forks : originals;
+  const tests = testSummary(user.id);
 
   return (
     <main className="mx-auto w-full max-w-[1300px] px-6 py-12 lg:px-12">
@@ -34,6 +36,27 @@ export default async function MyPage(props: PageProps<"/me">) {
           <button className="label-mono rounded-[24px] bg-slate px-5 py-2 leading-[2] text-muted">Log out</button>
         </form>
       </div>
+
+      {/* Prompt test banner — a saturated ultraviolet tile, like a coding-test dashboard. */}
+      <section className="mt-10 flex flex-wrap items-center gap-6 rounded-feature bg-ultraviolet p-6 sm:p-8">
+        <div className="min-w-0 flex-1">
+          <p className="label-mono tracking-[1.8px] text-white/80">Prompt Test</p>
+          <p className="mt-2 text-[28px] font-bold leading-tight">
+            {tests.solved} / {tests.total} 문제 해결
+          </p>
+          <div className="mt-4 h-2 max-w-md overflow-hidden rounded-full bg-white/20">
+            <div className="h-full bg-mint" style={{ width: `${(tests.solved / tests.total) * 100}%` }} />
+          </div>
+          {tests.next && (
+            <p className="mt-3 text-sm text-white/80">
+              다음 추천 문제 · Lv.{tests.next.level} {tests.next.title}
+            </p>
+          )}
+        </div>
+        <Link href={tests.next ? `/tests/${tests.next.slug}` : "/tests"} className="btn-mint">
+          {tests.next ? "도전하기" : "문제 목록"}
+        </Link>
+      </section>
 
       <div className="mt-12 flex gap-6 border-b border-frame">
         {TABS.map((t) => (

@@ -47,3 +47,24 @@ CREATE TABLE IF NOT EXISTS commits (
   created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 CREATE INDEX IF NOT EXISTS commits_repo ON commits(repo_id, id);
+
+-- Prompt test ("coding test" style) problems and graded submissions.
+CREATE TABLE IF NOT EXISTS challenges (
+  slug        TEXT PRIMARY KEY,
+  level       INTEGER NOT NULL,
+  title       TEXT NOT NULL,
+  category    TEXT NOT NULL,
+  description TEXT NOT NULL,
+  tests_json  TEXT NOT NULL,
+  sort_order  INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS submissions (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  challenge_slug TEXT NOT NULL REFERENCES challenges(slug) ON DELETE CASCADE,
+  prompt         TEXT NOT NULL,
+  score          INTEGER NOT NULL,
+  created_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS submissions_user ON submissions(user_id, challenge_slug);

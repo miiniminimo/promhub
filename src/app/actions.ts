@@ -2,10 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getChallenge, grade, scoreOf, type TestResult } from "@/lib/challenges";
 import { getPost } from "@/lib/posts";
-import { createSession, destroySession, hashPassword, requireUser, verifyPassword } from "@/lib/server/auth";
+import { createSession, destroySession, getCurrentUser, hashPassword, requireUser, verifyPassword } from "@/lib/server/auth";
 import { db } from "@/lib/server/db";
 import { addCommit, createRepo, forkPost, forkRepo, getRepo, saveImage, setVisibility, slugify } from "@/lib/server/repos";
+import { saveSubmission } from "@/lib/server/submissions";
 import type { Style } from "@/lib/types";
 
 export type FormState = { error?: string; username?: string } | undefined;
@@ -137,4 +139,23 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
     message: "Initial commit",
   });
   redirect(`/repos/${repoId}`);
+}
+
+// ---------- Prompt tests ----------
+
+export type TestRunResult = { results: TestResult[]; score: number; submitted: boolean };
+
+export async function runTestAction(slug: string, prompt: string, submit: boolean): Promise<TestRunResult> {
+  const challenge = getChallenge(slug);
+  if (!challenge) throw new Error("Unknown challenge");
+  const results = grade(prompt, challenge.tests);
+  const score = scoreOf(results);
+
+  const user = submit ? await getCurrentUser() : null;
+  if (user) {
+    saveSubmission(user.id, slug, prompt, score);
+    revalidatePath("/tests");
+    revalidatePath("/me");
+  }
+  return { results, score, submitted: !!user };
 }

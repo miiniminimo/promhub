@@ -2,7 +2,8 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/server/auth";
 
 const NAV = [
-  { href: "/", label: "Explore", className: "" },
+  { href: "/", label: "Explore", className: "hidden sm:block" },
+  { href: "/tests", label: "Prompt Test", className: "" },
 ];
 
 export async function Header() {
