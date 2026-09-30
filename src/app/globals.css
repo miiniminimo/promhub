@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+/* Design tokens — see DESIGN.md (The Verge–inspired). Dark canvas only, no light mode. */
+@theme {
+  --color-canvas: #131313;
+  --color-slate: #2d2d2d;
+  --color-frame: #313131;
+  --color-mint: #3cffd0;
+  --color-mint-border: #309875;
+  --color-ultraviolet: #5200ff;
+  --color-purple-rule: #3d00bf;
+  --color-link-hover: #3860be;
+  --color-focus: #1eaedb;
+  --color-secondary: #949494;
+  --color-muted: #e9e9e9;
+  --color-dim: #8c8c8c;
+  /* Story-tile accent palette */
+  --color-tile-yellow: #ffe14d;
+  --color-tile-pink: #ff5ec4;
+  --color-tile-orange: #ff7a1a;
+
+  --radius-tag: 2px;
+  --radius-img: 4px;
+  --radius-tile: 20px;
+  --radius-feature: 24px;
+  --radius-pill: 40px;
+}
+
+@theme inline {
+  /* Substitutes: Manuka → Anton, PolySans → Space Grotesk, PolySans Mono → Space Mono, FK Roman → Newsreader. Noto Sans KR covers Hangul. */
+  --font-display: var(--font-anton), var(--font-noto-kr), Impact, Helvetica, sans-serif;
+  --font-sans: var(--font-space-grotesk), var(--font-noto-kr), Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-space-mono), var(--font-noto-kr), "Courier New", monospace;
+  --font-serif: var(--font-newsreader), var(--font-noto-kr), Georgia, serif;
+}
+
+@layer base {
+  body {
+    background: var(--color-canvas);
+    color: #ffffff;
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* PolySans Mono labels are always uppercase with open tracking. */
+  .label-mono {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+  }
+
+  .btn-mint {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    line-height: 2;
+    padding: 6px 20px;
+    border-radius: 24px;
+    background: var(--color-mint);
+    color: #000;
+    transition: background-color 180ms ease, box-shadow 180ms ease;
+  }
+  .btn-mint:hover {
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0 1px #c2c2c2;
+    color: #fff;
+  }
+
+  .link-hover {
+    transition: color 150ms ease;
+  }
+  .link-hover:hover {
+    color: var(--color-link-hover);
+  }
+}
+
