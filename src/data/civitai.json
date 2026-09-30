@@ -1,0 +1,1512 @@
+[
+  {
+    "id": "2669960",
+    "title": "san, full body, squatting, short hair",
+    "author": "Stellaaa",
+    "model": "Pony",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/936f0e8d-c76f-4aa7-8b5c-37349f9b7da7/width=600/936f0e8d-c76f-4aa7-8b5c-37349f9b7da7.jpeg",
+        "width": 1520,
+        "height": 1952
+      }
+    ],
+    "prompt": "score_9, score_8_up, score_7_up,  san, 1girl, full body, squatting, solo, short hair, brown hair, gray eyes, headband, face paint, earrings, white sleeveless top, navy under dress, arm cuffs, fur headdress, fur cape, light-skinned female, female focus, looking at viewer, smiling, forest, (blush:1.1)  <lora:pony/twilight_style:0.8> concept art, realistic, <lora:pony/expressiveh:0.8> expressiveh, <lora:pony/kenva:0.8> knva, <lora:pony/san_pony_v4> <lora:sdxl/sinfully_stylish_sdxl>",
+    "negativePrompt": "score_6, score_5, score_4",
+    "params": {
+      "sampler": "Euler a Karras",
+      "steps": 25,
+      "cfgScale": 7,
+      "seed": 3269595310
+    },
+    "likes": 24123,
+    "createdAt": "2024-05-10T21:33:39.009Z",
+    "sourceUrl": "https://civitai.com/posts/2669960"
+  },
+  {
+    "id": "14356296",
+    "title": "A close-up of a face adorned with intricate…",
+    "author": "L10n_H34r7",
+    "model": "Flux.1 D",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/db5208dd-da08-40c7-8ed4-bd67508740ac/width=600/db5208dd-da08-40c7-8ed4-bd67508740ac.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "A close-up of a face adorned with intricate black and blue patterns. The left side of the face is predominantly yellow, with symbols and doodles, while the right side is dark, featuring mechanical elements. The eye on the left is a striking shade of yellow, contrasting sharply with the surrounding patterns. The face is partially covered by a hooded garment, cinematic_1940s cinematic_octane",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "Undefined",
+      "steps": 30,
+      "cfgScale": 2.5,
+      "seed": 588815599
+    },
+    "likes": 22406,
+    "createdAt": "2025-04-11T19:56:34.648Z",
+    "sourceUrl": "https://civitai.com/posts/14356296"
+  },
+  {
+    "id": "2617340",
+    "title": "very dark focused flash photo",
+    "author": "saper7474377",
+    "model": "SDXL 1.0",
+    "style": "photo",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/dd00de1d-ec6a-4848-bc8c-01d7a8437a5d/width=600/dd00de1d-ec6a-4848-bc8c-01d7a8437a5d.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "very dark focused flash photo, amazing quality, masterpiece, best quality, hyper detailed, ultra detailed, UHD, perfect anatomy, portrait, dof, hyper-realism, majestic, awesome, inspiring,Capture the thrilling showdown between the ancient mummy and the colossal sand boss in an epic battle amidst swirling dust and desert sands. Embrace the action and chaos as these formidable forces clash in the heart of the dunes. cinematic composition, soft shadows, national geographic style",
+    "negativePrompt": "easynegative, bad proportions, low resolution, bad, ugly, terrible, painting, 3d, render, comic, anime, manga, unrealistic, flat, watermark, signature, worst quality, low quality, normal quality, lowres, simple background, inaccurate limb, extra fingers, fewer fingers, missing fingers, extra arms, (extra legs:1.3), inaccurate eyes, bad composition, bad anatomy, error, extra digit, fewer digits, cropped, low res, worst quality, low quality, normal quality, jpeg artifacts, extra digit, fewer digits, trademark, watermark, artist's name, username, signature, text, words, human,",
+    "params": {
+      "sampler": "DPM++ 2M",
+      "steps": 37,
+      "cfgScale": 4.5,
+      "seed": 1942001206
+    },
+    "likes": 20388,
+    "createdAt": "2024-05-08T11:26:03.864Z",
+    "sourceUrl": "https://civitai.com/posts/2617340"
+  },
+  {
+    "id": "3670443",
+    "title": "BREAK, portrait, beautiful, tiefling shaman",
+    "author": "PaperbackLion",
+    "model": "Pony",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/81f8e626-a822-4815-b8be-361ff65b0d88/width=600/81f8e626-a822-4815-b8be-361ff65b0d88.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "score_9, score_8_up, score_7_up, BREAK,\n1girl, portrait, beautiful, tiefling shaman, white hair, (long hair:1.3), side bangs, horns, barbarian, gladiator, war paint, tribal markings, long tail, blue skin, pink eyes, glowing eyes, (smug:0.85), (big breast:1.25), dramatic lights\n<lora:Fant5yP0ny:0.6> <lora:fantasy_world_pony:0.9> <lora:Cherry-Gig:0.55>",
+    "negativePrompt": "score_6, score_5, score_4, censored, furry, child, kid, chibi, 3d, aidxlv05_neg, signature, watermark, subtitles",
+    "params": {
+      "sampler": "Euler a",
+      "steps": 40,
+      "cfgScale": 4.5,
+      "seed": 3530067213
+    },
+    "likes": 20093,
+    "createdAt": "2024-06-19T18:28:27.557Z",
+    "sourceUrl": "https://civitai.com/posts/3670443"
+  },
+  {
+    "id": "2796738",
+    "title": "giant rock golem with plants growing on shoulders",
+    "author": "FML2",
+    "model": "Pony",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/4e27f2b8-68b2-4eec-9912-07c2468cfc4b/width=600/4e27f2b8-68b2-4eec-9912-07c2468cfc4b.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "score_9,score_8_up,score_7_up, AUTOMATON, \ngiant rock golem with plants growing on shoulders, rough rocks, rough stone, unpolished, dirty, ancient, STANDING,",
+    "negativePrompt": "(score_4,score_5,score_3,score_2,score_1), nude, flesh, gender, genitalia, EYES, NOSE, MOUTH,",
+    "params": {
+      "sampler": "DPM++ 2M Karras",
+      "steps": 40,
+      "cfgScale": 8.5,
+      "seed": 1756146257
+    },
+    "likes": 19082,
+    "createdAt": "2024-05-16T14:42:49.002Z",
+    "sourceUrl": "https://civitai.com/posts/2796738"
+  },
+  {
+    "id": "2061174",
+    "title": "image of a hand offering money to a…",
+    "author": "Tugoff",
+    "model": "SDXL 1.0",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/695375a4-d7af-461e-ae6f-5ee960d34caa/width=600/695375a4-d7af-461e-ae6f-5ee960d34caa.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "image of a hand offering money to a fishmonger cat, holding fish, 8k, ultra detailed, at the market, <lora:cashbaba:0.6>  <lora:xl_more_art-full_v1:0.5>",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "DPM++ 2M SDE Karras",
+      "steps": 20,
+      "cfgScale": 4.5,
+      "seed": 3912581945
+    },
+    "likes": 18435,
+    "createdAt": "2024-04-09T17:30:28.993Z",
+    "sourceUrl": "https://civitai.com/posts/2061174"
+  },
+  {
+    "id": "2347846",
+    "title": "aged black red paper",
+    "author": "Rohanda",
+    "model": "SDXL 1.0",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/402ed7f8-ba25-421d-a68a-b11ae31af91f/width=600/402ed7f8-ba25-421d-a68a-b11ae31af91f.jpeg",
+        "width": 450,
+        "height": 800
+      }
+    ],
+    "prompt": "linquivera,  Ink illustration, (anime:0.5), brown tones, aged black red paper, inkpunk, moonlight,surreal, a ghost standing on a boat in swampy wetlands, (at a distance), Will-o'-the-wisp, moonlit, lonely, solitude, windy, tall trees, willows, willowy,  OverallDetail, extremely detailed, UHD,(long exposure , dystopian but extremely beautiful:1.4),<lora:- SDXL - letitflrsh_let_it_flourish_V1.0:0.8> ,<lora:Cute_Collectible:1>, <lora:XL_boss_battle:0.6>  <lora:add-detail-xl:1>,  <lora:Concept Art Twilight Style SDXL_LoRA_Pony Diffusion V6 XL:1>,  <lora:MJ52:1>",
+    "negativePrompt": "(worst quality, low quality, illustration, 3d, 2d, painting, cartoons, sketch), open mouth",
+    "params": {
+      "sampler": "DPM++ SDE Karras",
+      "steps": 38,
+      "cfgScale": 4,
+      "seed": 282176597
+    },
+    "likes": 18093,
+    "createdAt": "2024-04-25T09:36:34.533Z",
+    "sourceUrl": "https://civitai.com/posts/2347846"
+  },
+  {
+    "id": "14618996",
+    "title": "alcohol ink and watercolor on traditional washi paper",
+    "author": "OneViolentGentleman",
+    "model": "Flux.1 D",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/d2cf2d81-92de-4b3b-8fe0-492ae1044d34/width=600/d2cf2d81-92de-4b3b-8fe0-492ae1044d34.jpeg",
+        "width": 1920,
+        "height": 2560
+      }
+    ],
+    "prompt": "famous artwork, alcohol ink and watercolor on traditional washi paper, in a secluded, moonlit garden deep within an ancient forest and bathed in silver moonlight, a mythical silver-furred kitsune fox spirit sits regally upon a quaint wooden bridge arching over a tranquil koi pond, its presence both enchanting and enigmatic, its nine resplendent fox tails unfurl in a grand, mesmerizing display, fanning out behind it like an ethereal peacock wheel, each tail flowing like silk, shimmering with delicate strands of celestial light, and tipped with a faint, ghostly luminescence, its magical golden eyes glow intensely, casting an enchanting aura as they pierce the night. the scene is dreamlike, filled with cascading wisteria, intricately detailed herbs and wildflowers, and delicate misty fog drifting through the air, a few glowing will-oâ-wisps float gently around the kitsune, illuminating the moss-covered stones and the mirror-like koi pond beneath with their soft, mystical glow. the kitsuneâs tails dominate the composition, arranged in an elegant, symmetrical arc, their delicate, flowing texture highlighted by the contrast of moonlight and shadow, the atmosphere is surreal and enchanting, with a color palette of mint green, teal, deep indigo, ethereal blues, and soft lavender, golden accents from the kitsuneâs piercing gaze and the floating wisps create a striking contrast against the cool, dreamy hues, petals from the wisteria drift lazily through the air, caught in a soft breeze, their descent mirrored in the rippling pond, where the kitsuneâs spectral reflection appears even more otherworldly. a cinematic, painterly shot, slightly elevated angle, capturing the entire mystical landscape in breathtaking detail, intricate hand-painted textures and masterful use of light and shadow create a delicate balance between whimsy and haunting beauty, atmospheric fog softens the edges of the scenery, lending an otherworldly, timeless quality, the entire scene is rendered in handcrafted alcohol ink and watercolor, with soft, flowing brushstrokes, infused with a sense of ancient magic and mythical legends. inspired by studio ghibli, brian froud, and kay nielsen, accurate reflections, ovg, studio ghibli dark fairytale, <lora:style-dark_ghibli-flux-by_arsmachina:0.8> <lora:faetastic_details-flux-by_faeia:0.64>",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "LMS",
+      "steps": 60,
+      "cfgScale": 1,
+      "seed": 88888888
+    },
+    "likes": 17984,
+    "createdAt": "2025-03-31T16:43:29.067Z",
+    "sourceUrl": "https://civitai.com/posts/14618996"
+  },
+  {
+    "id": "3319540",
+    "title": "beautiful, white hair, long hair, bangs",
+    "author": "Imperativ",
+    "model": "Pony",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/c53c6b0f-ab0f-4970-8911-b9bfd66e6f21/width=600/c53c6b0f-ab0f-4970-8911-b9bfd66e6f21.jpeg",
+        "width": 768,
+        "height": 1280
+      }
+    ],
+    "prompt": "score_9, score_8_up, score_7_up, score_6_up, 1girl, beautiful, white hair, long hair, bangs, fair skin, big breasts, leather armor, sword, forest, dappled sunlight, upper body, looking at viewer",
+    "negativePrompt": "score_4, score_3, score_2, score_1, SDXL_general_unaestheticXL_Alb2, SDXL_semireal_unaestheticXL2v10",
+    "params": {
+      "sampler": "DPM++ SDE Karras",
+      "steps": 25,
+      "cfgScale": 7,
+      "seed": 2261475806
+    },
+    "likes": 17404,
+    "createdAt": "2024-06-07T21:36:24.088Z",
+    "sourceUrl": "https://civitai.com/posts/3319540"
+  },
+  {
+    "id": "5028682",
+    "title": "a digital illustration of a movie poster titled…",
+    "author": "Veilance",
+    "model": "Flux.1 D",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/a6f968b2-1220-422d-a618-ac1e938ffa62/width=600/a6f968b2-1220-422d-a618-ac1e938ffa62.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "a digital illustration of a movie poster titled \"Finding Emo\", finding nemo parody poster, featuring a depressed cartoon clownfish with black emo hair, eyeliner, and piercings, bored expression, swimming in a dark underwater scene, in the background, movie title in a dripping, grungy font, moody blue and purple color palette",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "Euler",
+      "steps": 25,
+      "cfgScale": null,
+      "seed": 419750308183444
+    },
+    "likes": 16839,
+    "createdAt": "2024-08-03T13:21:43.930Z",
+    "sourceUrl": "https://civitai.com/posts/5028682"
+  },
+  {
+    "id": "1960110",
+    "title": "character concept art of a beautiful woman leaning…",
+    "author": "AkiAICreator",
+    "model": "SDXL 1.0",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/ab2daea7-2269-436b-acad-e6c73ee8af83/width=600/ab2daea7-2269-436b-acad-e6c73ee8af83.jpeg",
+        "width": 720,
+        "height": 1280
+      }
+    ],
+    "prompt": "(1girl, solo, masterpiece, 8k, HDR,), ginger girl, \ncharacter concept art of a beautiful woman leaning over, red sweater falling off her shoulder, cleavage, extremely sexy, seductive, long hair, luscious lips, comic book art, rough colored sketch, \n(small breasts, big hips, looking at the viewer),\n(simple background, white background)",
+    "negativePrompt": "watermark, ugly, mutation, lowres, low quality, extra limbs, text, signature, artist name, bad anatomy, poorly drawn, malformed, deformed, blurry, out of focus, noise, dust",
+    "params": {
+      "sampler": "DPM++ 2M",
+      "steps": 40,
+      "cfgScale": 7,
+      "seed": 4033382240
+    },
+    "likes": 16755,
+    "createdAt": "2024-04-03T15:00:16.609Z",
+    "sourceUrl": "https://civitai.com/posts/1960110"
+  },
+  {
+    "id": "13464437",
+    "title": "realistic, cat, cute, sleeping",
+    "author": "Asto556",
+    "model": "Illustrious",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/afcab5fa-e580-489a-9ea8-bca23534be08/width=600/afcab5fa-e580-489a-9ea8-bca23534be08.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "realistic, solo, cat, cute, sleeping, light_particles, nature, mountain, depth of field, the best quality, amazing quality, high quality, masterpiece,",
+    "negativePrompt": "bad quality,worst quality,worst detail,sketch,censor,",
+    "params": {
+      "sampler": "DPM++ 2M",
+      "steps": 30,
+      "cfgScale": 7,
+      "seed": 174790514
+    },
+    "likes": 16471,
+    "createdAt": "2025-02-26T17:00:00.000Z",
+    "sourceUrl": "https://civitai.com/posts/13464437"
+  },
+  {
+    "id": "16830957",
+    "title": "unreal shapes emerge from the fog",
+    "author": "highCastle",
+    "model": "OpenAI",
+    "style": "photo",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/fd4e0f10-aa6f-42f5-8bc0-5dba35ad2a13/width=600/fd4e0f10-aa6f-42f5-8bc0-5dba35ad2a13.jpeg",
+        "width": 1024,
+        "height": 1536
+      }
+    ],
+    "prompt": "Dead can dance, misty morning, unreal shapes emerge from the fog, photo realism.",
+    "negativePrompt": null,
+    "params": {
+      "sampler": null,
+      "steps": null,
+      "cfgScale": null,
+      "seed": null
+    },
+    "likes": 16288,
+    "createdAt": "2025-05-18T06:58:39.518Z",
+    "sourceUrl": "https://civitai.com/posts/16830957"
+  },
+  {
+    "id": "2313097",
+    "title": "Calm spring night landscape",
+    "author": "SomeT",
+    "model": "SDXL 1.0",
+    "style": "photo",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/d57e4d81-eac9-40ed-9054-1d3b82a24f49/width=600/d57e4d81-eac9-40ed-9054-1d3b82a24f49.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "detailed background,( Calm spring night landscape), amongst lush greenery, beautiful view, creeping phlox in full bloom, creeping phlox, early morning, sunrise sky, beautiful clouds, dappled sunlight, outdoor seating, one lamp, Tranquil Lake, Boat on a Lake, depth of field, masterpiece, best quality, ultra-detailed, very aesthetic, illustration, perfect composition, intricate details, absurdres, moody lighting, wisps of light, no humans,",
+    "negativePrompt": "extra digit, fewer digits, cropped, worst quality, low quality, normal quality, very displeasing,  blurry, artist name,",
+    "params": {
+      "sampler": "DPM++ 2M",
+      "steps": 42,
+      "cfgScale": 7,
+      "seed": 958517608
+    },
+    "likes": 15978,
+    "createdAt": "2024-04-23T14:50:05.636Z",
+    "sourceUrl": "https://civitai.com/posts/2313097"
+  },
+  {
+    "id": "2068767",
+    "title": "r3dgl0w, red eyes, red background, dark",
+    "author": "freckledvixon",
+    "model": "Pony",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/00cb6f22-bd07-47d5-bd0d-e399aff68ade/width=600/00cb6f22-bd07-47d5-bd0d-e399aff68ade.jpeg",
+        "width": 864,
+        "height": 1152
+      }
+    ],
+    "prompt": "score_9, score_8_up, score_7_up, score_6_up, score_5_up, score_4_up,   <lora:r3dgl0wXLP:0.7> r3dgl0w, red eyes, red background, 1girl, dark, horns",
+    "negativePrompt": "3d,",
+    "params": {
+      "sampler": "Euler a",
+      "steps": 30,
+      "cfgScale": 7,
+      "seed": 2875866245
+    },
+    "likes": 15798,
+    "createdAt": "2024-04-10T04:15:57.821Z",
+    "sourceUrl": "https://civitai.com/posts/2068767"
+  },
+  {
+    "id": "3835910",
+    "title": "Silhouette of a Woman fighting a giant DARK…",
+    "author": "OrlandoOrso",
+    "model": "SDXL 1.0",
+    "style": "photo",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/c0ea2c31-2551-46b4-95e4-6c3ca52a0204/width=600/c0ea2c31-2551-46b4-95e4-6c3ca52a0204.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "Bosstyle, Silhouette of a Woman fighting a giant DARK mononoke Monster Boss resembling a ethereal fox with seven tails: Capture the essence of nostalgia and color in this vintage photograph. Dominating the scene is a meticulously detailed, translucent dark-red Blood filled firefox, adorned with vibrant patterns, blending seamlessly with its surroundings. Its long tail, composed of intricately woven ribbons in a spectrum of colors, trails behind, adding to the spectacle of the moment. Amidst the quietude of the night, its presence exudes a sense of ancestral strength and resilience. Behind it, the low-toned hues of the Milky Way cast a mesmerizing backdrop, a cosmic tapestry weaving tales of both past and future. In this moment, the convergence of tradition and technology, of ancient wisdom and industrial progress, hangs palpably in the air., atmospheric haze, Film grain, cinematic film still, shallow depth of field, highly detailed, high budget, cinemascope, moody, epic, OverallDetail, 2000s vintage RAW photo, photorealistic, candid camera, color graded cinematic, eye catchlights, atmospheric lighting, imperfections, natural, shallow dof",
+    "negativePrompt": "NEG-fixl-2, easynegative, bad proportions, low resolution, bad, ugly, terrible, painting, 3d, render, comic, anime, manga, unrealistic, flat, watermark, signature, worst quality, low quality, normal quality, lowres, simple background, inaccurate limb, extra fingers, fewer fingers, missing fingers, extra arms, (extra legs:1.3), inaccurate eyes, bad composition, bad anatomy, error, extra digit, fewer digits, cropped, low res, worst quality, low quality, normal quality, jpeg artifacts, extra digit, fewer digits, trademark, watermark, artist's name, username, signature, text, words, human,",
+    "params": {
+      "sampler": "DPM++ 2M Karras",
+      "steps": 45,
+      "cfgScale": 4.5,
+      "seed": 340283652
+    },
+    "likes": 15754,
+    "createdAt": "2024-06-25T07:08:44.943Z",
+    "sourceUrl": "https://civitai.com/posts/3835910"
+  },
+  {
+    "id": "2419192",
+    "title": "first person perspective, landscape photo, tron, heaven",
+    "author": "HyperActive84",
+    "model": "Pony",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/27220beb-d75d-4bad-9965-9506eb50a234/width=600/27220beb-d75d-4bad-9965-9506eb50a234.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "score_9, score_8_up, score_7_up,  ((first person perspective)), landscape photo, tron, heaven, ascendance, god rays, light, gold, sky,  advntr, underwater, alien, colorful, ((zdzislaw beksinski)),translucent,transparent,reelmech, mechanical parts, cable, wires, machinery, joints, body suit",
+    "negativePrompt": "score_6, score_5, score_4, simple background, blur, low quality, muscular, fairy wings,  censored, , , teeth, , furry, hair buns,",
+    "params": {
+      "sampler": "LMS",
+      "steps": 45,
+      "cfgScale": 7,
+      "seed": 171500869
+    },
+    "likes": 15654,
+    "createdAt": "2024-04-28T23:57:17.393Z",
+    "sourceUrl": "https://civitai.com/posts/2419192"
+  },
+  {
+    "id": "15265347",
+    "title": "in the style of ck-mgs",
+    "author": "Stu42",
+    "model": "Flux.1 D",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/9f50cbc3-98f4-4eb1-8bf6-34b40b30ad41/width=600/9f50cbc3-98f4-4eb1-8bf6-34b40b30ad41.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "nistyle, in the style of ck-mgs, Mh1$AgThS2, intricate linework with expressive contrasts, soft lighting with dynamic highlights, image of a dusty desert with a 1930s female explorer, blonde hair, safari hat and jacket, standing looking up at an Egyptian pyramid, silhouetted at sunset, sparse clouds",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "Undefined",
+      "steps": 25,
+      "cfgScale": 3.5,
+      "seed": 1515554949
+    },
+    "likes": 15580,
+    "createdAt": "2025-04-08T06:31:00.000Z",
+    "sourceUrl": "https://civitai.com/posts/15265347"
+  },
+  {
+    "id": "6209479",
+    "title": "The image is a digital illustration in a…",
+    "author": "LizardMan245",
+    "model": "Flux.1 D",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/e0e11f20-d392-4703-a708-600828585251/width=600/e0e11f20-d392-4703-a708-600828585251.jpeg",
+        "width": 1024,
+        "height": 1536
+      }
+    ],
+    "prompt": "The image is a digital illustration in a detailed, vibrant, high contrast, semi-realistic art style with 90s retro futuristic anime elements without noise or comic halftone effect. The subject is a woman with dark shoulder length hair and green eyes. Her face showing a serious expression. The theme of her body is a vivid red. Her body is slender and athletic. Her body is cyborg with mechanical parts integrated into it. Her arms and chest are fully mechanical. she is wearing a red futuristic, cybernetic, high-tech suit with a vivid red color, reminiscent of military or space gear. the background features a greenish, (dark), abandined, industrial setting with metallic pipes and machinery, creating a sense of a dystopian or sci-fi environment. The compostition and the poses are dynamic. The composition is dominated by cool tones, with a muted, slightly gritty texture that enhances the gritty, futuristic atmosphere.",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "Euler",
+      "steps": 35,
+      "cfgScale": 3.5,
+      "seed": 526419013298427
+    },
+    "likes": 15442,
+    "createdAt": "2024-09-04T19:05:41.445Z",
+    "sourceUrl": "https://civitai.com/posts/6209479"
+  },
+  {
+    "id": "6413732",
+    "title": "cherry blossom flower petals floating around her",
+    "author": "a2957598",
+    "model": "Pony",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/a103c4ba-ee8c-47b8-a649-5eed4e16efb8/width=600/a103c4ba-ee8c-47b8-a649-5eed4e16efb8.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "(silhouette_with_gold_foil:1.5), 1girl, pretty woman, grey eyes, detailed face, long hair, twintails, capelet, dress, gloves, cherry blossom flower petals floating around her, setting sun in back ground illuminating the body, lost the deep forest, many trees and foliage around her, a mysterious terror and fear inducing scene, small golden stars, circular patterns around body, intricate golden dress, gold foil,\nscore_9, score_8_up, score_7_up, score_6_up, score_5_up,",
+    "negativePrompt": "score_4,score_5,score_3,score_2,score_1, text, signature, username",
+    "params": {
+      "sampler": "Euler a",
+      "steps": 29,
+      "cfgScale": 7,
+      "seed": 2123616405
+    },
+    "likes": 15133,
+    "createdAt": "2024-09-10T06:08:58.081Z",
+    "sourceUrl": "https://civitai.com/posts/6413732"
+  },
+  {
+    "id": "15265399",
+    "title": "in the style of ck-mgs",
+    "author": "Stu42",
+    "model": "Flux.1 D",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/bc6061bd-5bae-408a-9718-84232693d223/width=600/bc6061bd-5bae-408a-9718-84232693d223.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "in the style of ck-mgs, nistyle, Special Ink-drawing mode, intricate linework with expressive contrasts, Mh1$AgThS2, Inkplash art on rice paper, sepia, henna , Silhouette Art, magnificent, inksplash closeup portrait of Chinese woman punting, sunset, calm lake, redlection",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "Undefined",
+      "steps": 25,
+      "cfgScale": 3.5,
+      "seed": 60113041
+    },
+    "likes": 15131,
+    "createdAt": "2025-04-08T06:51:00.000Z",
+    "sourceUrl": "https://civitai.com/posts/15265399"
+  },
+  {
+    "id": "16820009",
+    "title": "a cinematic photograph classily depicts a prestigious beautiful…",
+    "author": "Ocean3",
+    "model": "OpenAI",
+    "style": "photo",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/a4d25013-1fb5-4610-8610-07a466ab2627/width=600/a4d25013-1fb5-4610-8610-07a466ab2627.jpeg",
+        "width": 1024,
+        "height": 1536
+      }
+    ],
+    "prompt": "realistic, vibrant, detailed. a cinematic photograph classily depicts a prestigious beautiful woman dressed in an all white dress. The woman has no face. Her head is a sphere, a colorful gradient foreign planet, and not a human head. Her outfit is adorned by luxurious gold trim and other attire. Her skin is tan with smooth rough textures. She has a very detailed planetary sphere for her head that emits natural weather phenomenon and neon ethereal ozonous layers, swirls, and hues. The image is sharp and professional with studio quality. The contrast and style is very sharp, but liquid and vivid. Gorgeous background and details with subtle hints of illumination. glass, ether, spirit, breath, light, energy. Particles, high density quality, vibrant colors and hues. The overall style of the image is highly stylish, dynamic and free-flowing elegance., modest, sfw",
+    "negativePrompt": null,
+    "params": {
+      "sampler": null,
+      "steps": null,
+      "cfgScale": null,
+      "seed": null
+    },
+    "likes": 14929,
+    "createdAt": "2025-05-18T06:49:19.333Z",
+    "sourceUrl": "https://civitai.com/posts/16820009"
+  },
+  {
+    "id": "5246838",
+    "title": "A TV show poster for a parody series…",
+    "author": "impossiblebearcl4060",
+    "model": "Flux.1 D",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/5be4f7eb-7618-406e-8889-0abc966bf4f0/width=600/5be4f7eb-7618-406e-8889-0abc966bf4f0.jpeg",
+        "width": 2304,
+        "height": 3456
+      }
+    ],
+    "prompt": "A TV show poster for a parody series titled \"Breaking Bread,\" playing on the name of the famous show Breaking Bad. The poster features a stern-looking baker in a flour-dusted apron, with a rolling pin slung over his shoulder like a weapon. He stands in the middle of a rustic bakery, surrounded by stacks of bread loaves, pastries, and bags of flour, all arranged to mimic the iconic desert backdrop from the original show.\n\nBehind him, the bakery's chalkboard menu lists items like \"Cinnamon Swirl Cartel\" and \"Blueberry Muffin Meth,\" hinting at the culinary chaos that’s about to unfold. The baker’s expression is intense, yet comically serious, as if he's about to take on the world with nothing but his dough and determination.\n\nThe title \"Breaking Bread\" is displayed in bold, stylized text at the top, with the \"Breaking\" in a gritty, cracked font, while \"Bread\" is written in warm, golden letters resembling freshly baked loaves. The tagline beneath reads, \"Baking is a Dangerous Game,\" adding to the pun-filled humor.\n\nThe overall color scheme of the poster is a mix of warm, bakery hues with the gritty, dark tones reminiscent of the original show, blending the intense drama of Breaking Bad with the lighthearted, culinary twist of \"Breaking Bread.\"",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "Euler",
+      "steps": 20,
+      "cfgScale": null,
+      "seed": 340500836565573
+    },
+    "likes": 14883,
+    "createdAt": "2024-08-09T20:41:24.110Z",
+    "sourceUrl": "https://civitai.com/posts/5246838"
+  },
+  {
+    "id": "14370706",
+    "title": "in the style of ck-mgs",
+    "author": "Stu42",
+    "model": "Flux.1 D",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/0b977657-c60e-4a6d-9ffa-b81d3e90fa37/width=600/0b977657-c60e-4a6d-9ffa-b81d3e90fa37.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "in the style of ck-mgs, nistyle, Special Ink-drawing mode, intricate linework with expressive contrasts, Mh1$AgThS2, Inkplash art on rice paper, sepia, henna , Silhouette Art, magnificent, inksplash closeup portrait of stunning japanese female sc-fi soldier, helmet, mirrored visor reflecting jungle environment",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "Undefined",
+      "steps": 25,
+      "cfgScale": 3.5,
+      "seed": 305440652
+    },
+    "likes": 14802,
+    "createdAt": "2025-03-19T19:01:00.000Z",
+    "sourceUrl": "https://civitai.com/posts/14370706"
+  },
+  {
+    "id": "3549926",
+    "title": "hair over one eye",
+    "author": "FallenIncursio",
+    "model": "Pony",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/877f082b-3bc4-4b6d-976f-3980bfd0f62b/width=600/877f082b-3bc4-4b6d-976f-3980bfd0f62b.jpeg",
+        "width": 1664,
+        "height": 2432
+      }
+    ],
+    "prompt": "score_9, score_8_up, score_7_up, detailed, 1girl, solo, intricate details, chromatic aberration, realistic, long hair, pink hair, red head ornament, pink highlights, hair over one eye, purple eyes, earrings, sharp eyes, choker, neon shirt, torn legwear, open jacket, turtleneck sweater, night,against wall, brick wall, graffiti, dim lighting, alley, looking at viewer",
+    "negativePrompt": "monochrome, toned",
+    "params": {
+      "sampler": "Restart",
+      "steps": 18,
+      "cfgScale": 5,
+      "seed": 4098107878
+    },
+    "likes": 14616,
+    "createdAt": "2024-06-15T17:00:00.000Z",
+    "sourceUrl": "https://civitai.com/posts/3549926"
+  },
+  {
+    "id": "2331737",
+    "title": "silver and black stylized angry muscle doberman on…",
+    "author": "doberman1987",
+    "model": "SDXL 1.0",
+    "style": "photo",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/26cfd41c-7ced-4c28-839e-99c0498d05ea/width=600/26cfd41c-7ced-4c28-839e-99c0498d05ea.jpeg",
+        "width": 832,
+        "height": 1216
+      }
+    ],
+    "prompt": "(best quality, 8K, high resolution, masterpiece), ultra detailed, (3D CGI), black sunglasses, trendy, fashionable, silver and black stylized angry muscle doberman on a black background, countryside advertising, winning photo,",
+    "negativePrompt": "BadDream",
+    "params": {
+      "sampler": "Euler",
+      "steps": 8,
+      "cfgScale": 1,
+      "seed": 684123019
+    },
+    "likes": 14108,
+    "createdAt": "2024-04-24T13:11:16.549Z",
+    "sourceUrl": "https://civitai.com/posts/2331737"
+  },
+  {
+    "id": "14787049",
+    "title": "arm up, bangs, black background, blood",
+    "author": "Rustyvivid",
+    "model": "Illustrious",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/62927ff3-ee08-41d5-8532-b9cdb221a54b/width=600/62927ff3-ee08-41d5-8532-b9cdb221a54b.jpeg",
+        "width": 768,
+        "height": 1360
+      }
+    ],
+    "prompt": "1girl, arm up, bangs, black background, blood, closed mouth, covered eyes, dress, floating hair, greyscale, hooded cloak, long hair, long sleeves, looking at viewer, monochrome, one eye covered, simple background, solo, stuffed toy, thorns, witch hat <lora:RavenScript :1>",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "DPM++ 2M",
+      "steps": 20,
+      "cfgScale": 5,
+      "seed": 1888401168
+    },
+    "likes": 13969,
+    "createdAt": "2025-03-28T17:13:35.527Z",
+    "sourceUrl": "https://civitai.com/posts/14787049"
+  },
+  {
+    "id": "2890151",
+    "title": "concept art hidden face",
+    "author": "DreamCk",
+    "model": "SDXL 1.0",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/fb38a219-28f9-467d-b1e5-e51c650cbdd4/width=600/fb38a219-28f9-467d-b1e5-e51c650cbdd4.jpeg",
+        "width": 1792,
+        "height": 2304
+      }
+    ],
+    "prompt": "concept art hidden face, mysterious, hooded, full body, dark enigmatic warrior, standing, storm of falling shards, glowing ethereal giant heavy thick sword in hand, warriorâs intricate armor, tattered cloak that billows in the wind, atmosphere is charged with an otherworldly energy, fantasy realism, dramatic lighting, detailed textures to bring the scene to life, <lora:zavy-cntrst-sdxl:1.5>, <lora:- SDXL - vanta-black_contrast_V3.0:0.4>, <lora:glowneon_xl_v1:0.4> . digital artwork, illustrative, painterly, matte painting, highly detailed",
+    "negativePrompt": "photo, photorealistic, realism, ugly",
+    "params": {
+      "sampler": "DPM++ 2M Karras",
+      "steps": 30,
+      "cfgScale": 5,
+      "seed": 2667752565
+    },
+    "likes": 13957,
+    "createdAt": "2024-05-20T17:59:01.428Z",
+    "sourceUrl": "https://civitai.com/posts/2890151"
+  },
+  {
+    "id": "1992362",
+    "title": "a group of rats in the nursing home…",
+    "author": "popyay",
+    "model": "SDXL Lightning",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/0537ea36-62dd-4aab-8884-6da0e928e303/width=600/0537ea36-62dd-4aab-8884-6da0e928e303.jpeg",
+        "width": 1248,
+        "height": 1824
+      }
+    ],
+    "prompt": "a group of rats in the nursing home gather around a table for a game of cards, with one rat wearing a monocle and another puffing on a cigar. The rendering style is reminiscent of a classic oil painting.  <lora:add-detail-xl:1>  <lora:MJ52:0.5>",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "DPM++ SDE Karras",
+      "steps": 8,
+      "cfgScale": 1,
+      "seed": 2768675309
+    },
+    "likes": 13885,
+    "createdAt": "2024-04-05T14:03:09.884Z",
+    "sourceUrl": "https://civitai.com/posts/1992362"
+  },
+  {
+    "id": "2599613",
+    "title": "detailed realistic close up of a strawberry shaped…",
+    "author": "freek22",
+    "model": "SDXL Hyper",
+    "style": "photo",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/6fcaf10d-d444-489e-9fe2-a945fbbd6cc3/width=600/6fcaf10d-d444-489e-9fe2-a945fbbd6cc3.jpeg",
+        "width": 896,
+        "height": 1216
+      }
+    ],
+    "prompt": "detailed realistic close up of a strawberry shaped like a kitten, sitting, natural light",
+    "negativePrompt": "worst quality",
+    "params": {
+      "sampler": "DPM++ SDE",
+      "steps": 8,
+      "cfgScale": 5,
+      "seed": 2090560901
+    },
+    "likes": 13704,
+    "createdAt": "2024-05-07T15:47:56.575Z",
+    "sourceUrl": "https://civitai.com/posts/2599613"
+  },
+  {
+    "id": "14379899",
+    "title": "light particles textured clothing",
+    "author": "EcstaticKalliope",
+    "model": "Illustrious",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/18612c96-c21c-4bd7-aef0-21b9b57f4b7e/width=600/18612c96-c21c-4bd7-aef0-21b9b57f4b7e.jpeg",
+        "width": 1792,
+        "height": 2304
+      }
+    ],
+    "prompt": "(atmosphere, masterpiece, high_quality, absurdres, very aesthetic, blurry_background, grainy_texture, film_grain, light particles textured clothing, textured hair, painterly, watercolor_\\(medium\\), colored_pencil_\\(medium\\), blending)\n(w1tchyc0ttagec0re, petting fox in foreground, 1girl, solo, long_hair, blush, looking_at_viewer, smile, open_mouth, brown_hair, photoshop_(medium), shirt, brown_eyes, green_eyes, jacket, ponytail, flower, :d, food, teeth, indoors, cup, window, mask, night, chair, table, high_ponytail, bottle, plant, bowl, lantern, mug, potted_plant, mask_on_head, fox_mask, coffee, shelf, kitchen, jar, shop, mask_removed, counter, inuyasha)",
+    "negativePrompt": "worst quality, bad quality, low quality, lowres, anatomical nonsense, artistic error, bad anatomy, realistic, 3D",
+    "params": {
+      "sampler": "Euler a",
+      "steps": 40,
+      "cfgScale": 3.5,
+      "seed": 67318230036877
+    },
+    "likes": 13674,
+    "createdAt": "2025-03-19T20:24:12.318Z",
+    "sourceUrl": "https://civitai.com/posts/14379899"
+  },
+  {
+    "id": "15518004",
+    "title": "by Joe Madureira and Johan Messely in the…",
+    "author": "LordTerror",
+    "model": "SDXL Lightning",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/c1334e29-105b-4396-91d7-be57299e25f2/width=600/c1334e29-105b-4396-91d7-be57299e25f2.jpeg",
+        "width": 1536,
+        "height": 1536
+      }
+    ],
+    "prompt": "by Joe Madureira and Johan Messely in the style of Peter Holme III, silhouette <lora:silhouette:2.00>",
+    "negativePrompt": "poorly drawn, deviant, mess, low quality, deformed, unprofessional, plastic doll",
+    "params": {
+      "sampler": "Euler a",
+      "steps": 20,
+      "cfgScale": 1.5,
+      "seed": 1156582717
+    },
+    "likes": 11905,
+    "createdAt": "2025-04-13T22:53:41.861Z",
+    "sourceUrl": "https://civitai.com/posts/15518004"
+  },
+  {
+    "id": "20521243",
+    "title": "background castle in fog",
+    "author": "TurinBjorn",
+    "model": "Illustrious",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/b5770c78-bf54-49e7-8c2c-b1beddc22119/width=600/b5770c78-bf54-49e7-8c2c-b1beddc22119.jpeg",
+        "width": 1664,
+        "height": 2432
+      }
+    ],
+    "prompt": "incredibly absurdres, highres, masterpiece, newest, creative, filmic, cinematic, amazing lighting, magical, realistic, great angle, fantasy, mushroom forest, clearing, mystical, small fairy, sitting, side view, thimble, solo, knees together, feet apart, vivid, nighttime, night sky, multicolored, lush, wings, tiny life, fairy attire, nebula, background castle in fog, mountain, trees",
+    "negativePrompt": "worst quality, bad quality, low quality, lowres, cartoon, anime, nude, young, (((looking at viewer))), fuzzy, snow, makeup",
+    "params": {
+      "sampler": "Euler a",
+      "steps": 30,
+      "cfgScale": 5,
+      "seed": null
+    },
+    "likes": 11734,
+    "createdAt": "2025-08-05T19:52:48.053Z",
+    "sourceUrl": "https://civitai.com/posts/20521243"
+  },
+  {
+    "id": "21406322",
+    "title": "detailed background, dynamic angle, \"alpacaxd, chopsticks",
+    "author": "ArtistIA",
+    "model": "Illustrious",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/4e9945d6-da5d-4c26-8ad1-311a03d049a7/width=600/4e9945d6-da5d-4c26-8ad1-311a03d049a7.jpeg",
+        "width": 792,
+        "height": 1104
+      }
+    ],
+    "prompt": "masterpiece, best quality, amazing quality, very aesthetic, absurdres, newest, detailed background, 8k, dynamic angle,\n\"alpacaxd, 1girl, chopsticks, noodles, solo, food, black hair, braid, qing guanmao, jiangshi, ramen, hat, twin braids, eating, long hair, blue eyes, ofuda, chinese clothes, bowl, colored skin\",\n <lora:Alpaca_Carlesi_Style:1>",
+    "negativePrompt": "worst_quality, bad_quality, poorly_detailed, 2d, sketch, ugly face, low res, interlocked fingers, anatomically incorrect hands, bad anatomy, {worst quality, low quality, normal quality}, watermark, signature, letter, username, logo, name, text, badhandsv5-neg, (monochrome), (gray scale), ugly face, distorted face, bad body, extra limbs, malformed limbs, extra limbs, {missing hands, extra hands, bad hands}, {missing legs, extra legs, bad legs}, {missing arms, extra arms, bad arms}, {missing thighs, extra thighs,bad thighs}, (bad anatomy:1.5), {Multiple people}, mutilated, poorly drawn hands, poorly drawn face, bad proportions, gross proportions, jpeg artifacts, signature, mutation, deformity, by CT, {fused fingers, too many fingers, blurry finger}, {missing finger, bad finger}, ((extra finger)), EasyNegative, EasynegativeV2, ng_deepnegative_v1_75t, (((mole on the skin))), negativeXL_D, negativeXL_D,",
+    "params": {
+      "sampler": "Euler a",
+      "steps": 30,
+      "cfgScale": 7,
+      "seed": 2847572173
+    },
+    "likes": 11165,
+    "createdAt": "2025-08-28T09:27:34.985Z",
+    "sourceUrl": "https://civitai.com/posts/21406322"
+  },
+  {
+    "id": "21144918",
+    "title": "intricate details, sharp focus, painterly style, traditional media",
+    "author": "Chumple",
+    "model": "Illustrious",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/5dbdf11f-ff46-4357-a1ea-7dcab8d92c6f/width=600/5dbdf11f-ff46-4357-a1ea-7dcab8d92c6f.jpeg",
+        "width": 3168,
+        "height": 4608
+      }
+    ],
+    "prompt": "masterpiece, best quality, absurdres, ultra-detailed, intricate details, sharp focus, painterly style, traditional media, HDR, vibrant colors, ink wash, cinematic lighting, epic composition,IllusP0s, 1girl, Seiza, sad, lonely, hanfu, black ruffling_hair, brown eyes, dutch angle, scenic, cherry blossoms,  <lora:ScenicILL:0.75>",
+    "negativePrompt": "(low quality, worst quality), patreon, artist name, displeasing, ugly, poorly drawn, displeasing, very displeasing, worst quality, bad quality, oldest, deformed limbs, bad anatomy, child, chibi",
+    "params": {
+      "sampler": "Euler a",
+      "steps": 8,
+      "cfgScale": 6,
+      "seed": 4124978750
+    },
+    "likes": 11124,
+    "createdAt": "2025-08-20T18:00:16.642Z",
+    "sourceUrl": "https://civitai.com/posts/21144918"
+  },
+  {
+    "id": "18802071",
+    "title": "ethereal woman in soft light",
+    "author": "reijlita",
+    "model": "Illustrious",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/f8e9dc25-7408-4ebc-9120-8a65a6b7557a/width=600/f8e9dc25-7408-4ebc-9120-8a65a6b7557a.jpeg",
+        "width": 1264,
+        "height": 1848
+      }
+    ],
+    "prompt": "Fantasy Style, Grunge, masterpiece, high_quality, highres, woman, portrait, monochromatic color, black, \nethereal woman in soft light, shadow crawling behind her expression, neutral, looking at viewer, dream or illusion, palette porcelain skin, pale rose, deep black, style surreal, cinematic, angle half-lit portrait, profile, \ncircle, silhouette, glass fragments",
+    "negativePrompt": "lowres, bad anatomy, deformed face, watermark, logo,",
+    "params": {
+      "sampler": "Euler a",
+      "steps": 30,
+      "cfgScale": 7,
+      "seed": 1138625421
+    },
+    "likes": 11095,
+    "createdAt": "2025-06-26T18:17:51.135Z",
+    "sourceUrl": "https://civitai.com/posts/18802071"
+  },
+  {
+    "id": "17264923",
+    "title": "A futuristic Egyptian warrior leaps through the air…",
+    "author": "CitronLegacy",
+    "model": "OpenAI",
+    "style": "photo",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/3c2c256f-fa37-4abe-a44d-a9327dfea308/width=600/3c2c256f-fa37-4abe-a44d-a9327dfea308.jpeg",
+        "width": 1024,
+        "height": 1536
+      }
+    ],
+    "prompt": "A futuristic Egyptian warrior leaps through the air in a dynamic pose, mid-battle against an army of rogue AI constructs. Their armor is a sleek fusion of gold nanometal and holographic hieroglyphs, glowing with ancient power. A high-tech ankh pulses with blue plasma energy in one hand, while the other channels a beam of scarab-like drones. Behind them, a colossal pyramid-shaped starship hovers above a neon-lit desert city, casting angular shadows across towering obelisks made of obsidian and glass. Dust and energy swirl dramatically in the air. Style: cyberpharaoh aesthetic, ultra-detailed, cinematic sci-fi, glowing tech motifs, movement blur, richly textured, Moebius meets Dune ",
+    "negativePrompt": null,
+    "params": {
+      "sampler": null,
+      "steps": null,
+      "cfgScale": null,
+      "seed": null
+    },
+    "likes": 10926,
+    "createdAt": "2025-05-22T01:44:09.644Z",
+    "sourceUrl": "https://civitai.com/posts/17264923"
+  },
+  {
+    "id": "14371442",
+    "title": "simple background, white background, depresso, blue body",
+    "author": "DD13",
+    "model": "Illustrious",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/c39338b4-fceb-48bc-8227-fdeb2f57344b/width=600/c39338b4-fceb-48bc-8227-fdeb2f57344b.jpeg",
+        "width": 1440,
+        "height": 1632
+      }
+    ],
+    "prompt": "masterpiece, best quality, absurdres, simple background, white background, <lora:Depresso_IL-000008:1> depresso, blue body, purple hair, black tail, pink eyes, solo, one eye closed, ikea shark, hugging ikea shark, chibi, standing, sparkle",
+    "negativePrompt": "worst quality, low quality, lowres, signature, watermark, artist name, sketch, bright pupils, dorsal fin, (countershade torso, white countershading:1.1), eyelashes",
+    "params": {
+      "sampler": "DPM++ 2M SDE",
+      "steps": 28,
+      "cfgScale": 3.5,
+      "seed": 1522453998
+    },
+    "likes": 10904,
+    "createdAt": "2025-03-19T19:30:00.000Z",
+    "sourceUrl": "https://civitai.com/posts/14371442"
+  },
+  {
+    "id": "19406344",
+    "title": "a world without a light so dark and…",
+    "author": "TijuanaSlumlord",
+    "model": "Chroma",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/1c779f94-d90a-4817-891f-38618eedbd90/width=600/1c779f94-d90a-4817-891f-38618eedbd90.jpeg",
+        "width": 832,
+        "height": 1280
+      }
+    ],
+    "prompt": "a world without a light so dark and bright on a faithfull night <lora:-_Flux1_DeDi_-_effects_n_pattern_1.0-step00002600:0.7000000000000002> <lora:-_Flux1_DeDi_-_sharp_various_longcaptation_1.0:0.8000000000000002>",
+    "negativePrompt": "test, words, writing, comic, letters, meme",
+    "params": {
+      "sampler": "DPM++ 2M_sgm_uniform",
+      "steps": 20,
+      "cfgScale": 5,
+      "seed": 598490787914000
+    },
+    "likes": 10703,
+    "createdAt": "2025-07-10T21:53:28.907Z",
+    "sourceUrl": "https://civitai.com/posts/19406344"
+  },
+  {
+    "id": "21562607",
+    "title": "amber \\ genshin impact\\",
+    "author": "blinkdotleh",
+    "model": "NoobAI",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/81f7d742-c6b1-42c0-b2ee-8746ee81fdd5/width=600/81f7d742-c6b1-42c0-b2ee-8746ee81fdd5.jpeg",
+        "width": 1248,
+        "height": 1872
+      }
+    ],
+    "prompt": "1girl, amber \\(genshin impact\\), solo, dark, greyscale, monochrome, profile, sidelighting, shiny skin, red eyes, close-up, masterpiece, best quality",
+    "negativePrompt": "lowres, worst quality",
+    "params": {
+      "sampler": "Euler a",
+      "steps": 28,
+      "cfgScale": 4,
+      "seed": 1
+    },
+    "likes": 10076,
+    "createdAt": "2025-08-29T15:06:18.821Z",
+    "sourceUrl": "https://civitai.com/posts/21562607"
+  },
+  {
+    "id": "16968045",
+    "title": "a glass marble with rainbow inside falling into…",
+    "author": "tjluins",
+    "model": "OpenAI",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/23c8ce90-fe80-4da3-9573-a1f4d563c568/width=600/23c8ce90-fe80-4da3-9573-a1f4d563c568.jpeg",
+        "width": 1024,
+        "height": 1536
+      }
+    ],
+    "prompt": "a glass marble with rainbow inside falling into water",
+    "negativePrompt": null,
+    "params": {
+      "sampler": null,
+      "steps": null,
+      "cfgScale": null,
+      "seed": null
+    },
+    "likes": 9967,
+    "createdAt": "2025-05-17T23:10:39.666Z",
+    "sourceUrl": "https://civitai.com/posts/16968045"
+  },
+  {
+    "id": "14948823",
+    "title": "the cutest girl in the world",
+    "author": "OneViolentGentleman",
+    "model": "Flux.1 DIllustrious",
+    "style": "photo",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/1cc4449f-0ebb-4566-adc8-50001d57ef0e/width=600/1cc4449f-0ebb-4566-adc8-50001d57ef0e.jpeg",
+        "width": 1920,
+        "height": 2560
+      }
+    ],
+    "prompt": "smooth_quality_illustrious-pos, (realistic:1.2), (very awa:1.2), (masterpiece:1.2), (best quality:1.2), (amazing quality:1.2), (very aesthetic:1.1), high resolution, absurdres, ultra-detailed, hdr, civchan, the cutest girl in the world, wearing a (maid costume:1.1), shoulder length pink hair, heart hands, glowing heart eyes, smiling, glimmer, sparkles, (lots of floating hearts:1.2), looking at viewer, cozy café, rim lighting, crepuscular rays, indoors, table, patrons in the background, food, curtains, circuit board sticking in a strawberry cake, cup of coffee with latte art, chalkboard with restaurant menu and hearts on the wall, little vase with flowers on the table, illuminated dust particles, \"someone\" asked me to add that i was definitely not forced with a knife to write \"cutest girl in the world\" about her, there, done, *sigh*, ovg, artist:moriimee, <lora:maid_cafe-illustrious-by_bolero537:1.0> <lora:civchan-illustrious-by_civchan:1.0> <lora:style-moriimee_gothic_niji-illustrious-by_tentacles_riders:0.6> <lora:dramatic_lighting_slider-illustrious-by_klaabu:3.0>",
+    "negativePrompt": "smooth_quality_illustrious-neg, (deformed:1.1), (crippled:1.1), (worst quality:1.1), (bad quality:1.1), (low quality:1.1), (2d:1.1), (flat:1.1), (simple:1.1), (ugly:1.1), unsharp, smudged, bad anatomy, bad hands, watermark, distorted, deformed, signature",
+    "params": {
+      "sampler": "Euler",
+      "steps": 120,
+      "cfgScale": 7.2,
+      "seed": 88888888
+    },
+    "likes": 9951,
+    "createdAt": "2025-04-02T22:37:05.565Z",
+    "sourceUrl": "https://civitai.com/posts/14948823"
+  },
+  {
+    "id": "17351787",
+    "title": "ikea blahaj shark if it were an axolotl…",
+    "author": "schmede",
+    "model": "OpenAI",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/18083612-52a8-48db-8a85-6ac258839fd1/width=600/18083612-52a8-48db-8a85-6ac258839fd1.jpeg",
+        "width": 1024,
+        "height": 1536
+      }
+    ],
+    "prompt": "ikea blahaj shark if it were an axolotl instead",
+    "negativePrompt": null,
+    "params": {
+      "sampler": null,
+      "steps": null,
+      "cfgScale": null,
+      "seed": null
+    },
+    "likes": 9846,
+    "createdAt": "2025-05-23T23:52:27.362Z",
+    "sourceUrl": "https://civitai.com/posts/17351787"
+  },
+  {
+    "id": "14373601",
+    "title": "paimon \\ genshin impact\\",
+    "author": "DigitalPastel",
+    "model": "NoobAI",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/e38cb413-a9f1-4e1b-90bc-1d42c4d52e26/width=600/e38cb413-a9f1-4e1b-90bc-1d42c4d52e26.jpeg",
+        "width": 912,
+        "height": 1336
+      }
+    ],
+    "prompt": "Smooth_Quality, solo, paimon \\(genshin impact\\), empty eyes, half-closed eyes, annoyed, star-shaped pupils, halo, smoking cigarette, blowing smoke, close-up portrait, short hair, bangs, hair ornament, hair between eyes, white hair, long sleeves, dress, scarf, cape, thighhighs, spot color, shaded face, black and white, from side, dynamic angle, looking at viewer, crossed arms,   <lora:Mature_Comics_Style_-_NoobAI:1>,",
+    "negativePrompt": "Smooth_Negative​​​,",
+    "params": {
+      "sampler": "DPM++ 2M",
+      "steps": 30,
+      "cfgScale": 5,
+      "seed": 415824853
+    },
+    "likes": 9684,
+    "createdAt": "2025-03-19T18:00:00.000Z",
+    "sourceUrl": "https://civitai.com/posts/14373601"
+  },
+  {
+    "id": "19358793",
+    "title": "Link stands at a sketchy-looking wooden kiosk in…",
+    "author": "C0rn_Fl4k3s",
+    "model": "OpenAI",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/9e5065ab-eccb-4881-841a-87a6beb07602/width=600/9e5065ab-eccb-4881-841a-87a6beb07602.jpeg",
+        "width": 1024,
+        "height": 1536
+      }
+    ],
+    "prompt": "Link stands at a sketchy-looking wooden kiosk in the Lost Woods, labeled “Tingle’s Totally Legal Rupee Exchange – Best Rates!”. Tingle, wearing sunglasses and a pinstripe suit over his usual green onesie, is handing Link a single giant glittery rupee in exchange for an entire satchel full of small ones. Link has a skeptical eyebrow raised. In the background, Skull Kids are peeking from behind trees, snickering. Shafts of mysterious green light beam through the forest canopy, casting dramatic light over this absurdly shady transaction. The scene has a magical but hilariously suspicious vibe.",
+    "negativePrompt": null,
+    "params": {
+      "sampler": null,
+      "steps": null,
+      "cfgScale": null,
+      "seed": null
+    },
+    "likes": 9540,
+    "createdAt": "2025-07-09T17:38:00.014Z",
+    "sourceUrl": "https://civitai.com/posts/19358793"
+  },
+  {
+    "id": "16574156",
+    "title": "create me a visual infographic describing Types of…",
+    "author": "Jedas",
+    "model": "OpenAI",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/c71608fc-1ab3-4eb7-a244-dae7a024b44a/width=600/c71608fc-1ab3-4eb7-a244-dae7a024b44a.jpeg",
+        "width": 1024,
+        "height": 1536
+      }
+    ],
+    "prompt": "create me a visual infographic describing Types of People You’ll Meet in Online Meetings",
+    "negativePrompt": null,
+    "params": {
+      "sampler": null,
+      "steps": null,
+      "cfgScale": null,
+      "seed": null
+    },
+    "likes": 9461,
+    "createdAt": "2025-05-06T21:08:32.673Z",
+    "sourceUrl": "https://civitai.com/posts/16574156"
+  },
+  {
+    "id": "4463249",
+    "title": "wl_lemons, a butterfly",
+    "author": "AIArtsChannel",
+    "model": "SDXL Turbo",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/1c4e7587-b093-4f2f-92e2-cc0876571f2a/width=600/1c4e7587-b093-4f2f-92e2-cc0876571f2a.jpeg",
+        "width": 3072,
+        "height": 5440
+      }
+    ],
+    "prompt": "<lora:lcm-lora-sdxl:1>,<lora:add-detail-xl:1>,<lora:When_Life_Gives_You_Lemons:1>,wl_lemons,a butterfly,",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "LCM",
+      "steps": 10,
+      "cfgScale": 1,
+      "seed": 3191814863
+    },
+    "likes": 9366,
+    "createdAt": "2025-03-24T14:57:02.567Z",
+    "sourceUrl": "https://civitai.com/posts/4463249"
+  },
+  {
+    "id": "16612129",
+    "title": "fantasy illustration of a luminous",
+    "author": "Faeia",
+    "model": "OpenAI",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/619d8c47-fb4e-40ff-a62a-bf66b9978908/width=600/619d8c47-fb4e-40ff-a62a-bf66b9978908.jpeg",
+        "width": 1024,
+        "height": 1536
+      }
+    ],
+    "prompt": "A hyper-detailed, fantasy illustration of a luminous, translucent dragon curled inside a shallow black stone bowl. The dragon is made of glasslike liquid fire, with its semi-transparent body swirling in hues of molten orange, glowing amber, crystalline lavender, and cool opalescent blues. Its eyes blaze with radiant golden light, giving it a powerful, sentient expression. The texture of its body shifts between molten lava and flowing liquid glass, with droplets and splashes captured mid-air, as if the dragon is constantly shifting between states of energy.\n\nFiery tendrils and flaming water-like wisps rise from its back and horns, creating an ethereal halo of heat and power. The dragon's form is coiled and majestic, with delicate claws and a sinuous, serpentine posture. The base of the bowl appears ancient and carved from volcanic rock, with glowing embers and enchanted molten energy bubbling beneath the dragon.\n\nAmbient lighting is magical and cinematic, with a strong internal glow emanating from the dragon's core, casting warm orange and gold light on its surroundings. The background is deep twilight blue, softly blurred with glowing orbs of mystical energy floating in the air. Scattered around the base are tiny enchanted orbs and gemstones, adding a cosmic, alchemical laboratory feel. Style is ultra-detailed fantasy realism with magical effects, perfect for high-end fantasy art or collectible card visuals.",
+    "negativePrompt": null,
+    "params": {
+      "sampler": null,
+      "steps": null,
+      "cfgScale": null,
+      "seed": null
+    },
+    "likes": 9273,
+    "createdAt": "2025-05-07T17:19:00.526Z",
+    "sourceUrl": "https://civitai.com/posts/16612129"
+  },
+  {
+    "id": "12760107",
+    "title": "very awa, 748cmstyle, 748cm, taro-k",
+    "author": "iviya",
+    "model": "NoobAI",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/f570fad2-1880-4978-a1cd-8f1e4e6e5494/width=600/f570fad2-1880-4978-a1cd-8f1e4e6e5494.jpeg",
+        "width": 1248,
+        "height": 1728
+      }
+    ],
+    "prompt": "very awa,  <lora:748cmSDXL:0.3>, 748cmstyle, <lora:748cm-NoobEPS100-lokr-v03-000080:0.6>, 748cm, <lora:ponyv6_noobV1_2_adamW-000017:0.35>, (taro-k:0.5), (opossumachine:0.3), (maccha \\mochancc\\:0.25), <lora:noobai_ep11_stabilizer_v0.114_fp16:0.4>,  <lora:XXX667:0.75>, xxx667_illu, <lora:114558v4df2fsdf5:0.8>, 15546+456868,  1girl, long hair, black hair, facing away, mechanical wings, mechanical spine,  black hole, from behind,  no lineart, realistic, blurry,  masterpiece, [best quality:0.25], newest, absurdres, very aesthetic, best quality, year 2024, newest,",
+    "negativePrompt": "worst aesthetic, worst quality, low quality, lowres, sketch,  [bad hands:0.2], [mutated hands:0.2], mammal, anthro, furry, feral, semi-anthro, oldest, old, loli, child, ai-generated, signature, nsfw,",
+    "params": {
+      "sampler": "Euler",
+      "steps": 32,
+      "cfgScale": 3.5,
+      "seed": 592009000507619
+    },
+    "likes": 9252,
+    "createdAt": "2025-02-10T17:17:53.717Z",
+    "sourceUrl": "https://civitai.com/posts/12760107"
+  },
+  {
+    "id": "18239414",
+    "title": "film-noir style portrait of a glamorous 1950s jazz…",
+    "author": "AutoPastel",
+    "model": "Imagen4",
+    "style": "photo",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/71dbde46-ad3b-4324-9733-b225e7402f32/width=600/71dbde46-ad3b-4324-9733-b225e7402f32.jpeg",
+        "width": 1792,
+        "height": 2560
+      }
+    ],
+    "prompt": "A sultry, film-noir style portrait of a glamorous 1950s jazz lounge singer leaning on a grand piano, a lit cigarette between her lips sending wisps of smoke curling into the warm, golden pool of lamp light; dramatic chiaroscuro shadows, shallow depth of field as if shot on an 85 mm lens, rich vintage color grading with subtle film grain for a cinematic, high-resolution finish.",
+    "negativePrompt": null,
+    "params": {
+      "sampler": null,
+      "steps": null,
+      "cfgScale": null,
+      "seed": null
+    },
+    "likes": 8714,
+    "createdAt": "2025-06-13T16:50:00.000Z",
+    "sourceUrl": "https://civitai.com/posts/18239414"
+  },
+  {
+    "id": "21520242",
+    "title": "calm water reflecting sky and clouds",
+    "author": "koonbai",
+    "model": "NoobAI",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/f2c9284e-c66a-4f42-ae83-5716f0829236/width=600/f2c9284e-c66a-4f42-ae83-5716f0829236.jpeg",
+        "width": 1024,
+        "height": 1536
+      }
+    ],
+    "prompt": "traditional painting, impressionist style, serene lake scene, calm water reflecting sky and clouds, two people in small wooden boat, one person wearing white shirt and hat, other person in brown clothes, boat in lower left corner, distant green hills and mountains, soft blue and green hues, pink and white clouds in sky, birds flying, gentle ripples in water, subtle texture, soft brushstrokes, peaceful atmosphere, light and shadows, small island with trees in background, clear blue sky, minimalistic composition, tranquil and idyllic, watercolor-like texture, slight yellowish-beige border, overall warm and soothing color palette.\nEnchanting Eyes",
+    "negativePrompt": "SmoothNoob_Negative,\nSmoothNoob_Negative-neg,",
+    "params": {
+      "sampler": "Euler a",
+      "steps": 30,
+      "cfgScale": 4,
+      "seed": 749935418005829
+    },
+    "likes": 8665,
+    "createdAt": "2025-08-28T16:12:11.182Z",
+    "sourceUrl": "https://civitai.com/posts/21520242"
+  },
+  {
+    "id": "30758041",
+    "title": "A girl with long black hair partially covering…",
+    "author": "Yoruuu",
+    "model": "Krea 2",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/c713f141-b501-4db4-8827-fd55b1f9ec79/width=600/c713f141-b501-4db4-8827-fd55b1f9ec79.jpeg",
+        "width": 768,
+        "height": 1152
+      }
+    ],
+    "prompt": "@NIJISIS, A girl with long black hair partially covering her face, dark red highlights in her hair, pale skin, wearing a black tactical cropped top with shoulder straps, a loose gray-green jacket, black shorts, red bandages wrapped around both arms and thighs, black combat boots with red laces, carrying a large silver sword resting between her legs, rugged post-apocalyptic streetwear, sitting against a worn green tiled wall, strong shadows obscuring her eyes and upper face, confident and intimidating presence, urban dystopian atmosphere, gritty surroundings, dramatic perspective, muted green environment contrasted with black and red clothing.\nPOSE:(sitting on the ground, legs spread apart, one knee raised toward the camera, relaxed seated posture, one hand resting on the sword handle, sword positioned vertically between the legs, leaning against the wall, low-angle perspective, looking downward toward the viewer)\nSTYLE:(anime illustration, gritty cyberpunk aesthetic, urban dystopian art, cinematic lighting, dramatic shadows, cel shading, bold lineart, textured grain, muted colors, teal and red color palette, high contrast, dynamic perspective, low angle shot, rough painted texture, atmospheric, edgy character design, retro anime aesthetic, detailed clothing and equipment)",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "Euler",
+      "steps": 8,
+      "cfgScale": 1,
+      "seed": 3170739026
+    },
+    "likes": 7660,
+    "createdAt": "2026-09-01T08:55:42.656Z",
+    "sourceUrl": "https://civitai.com/posts/30758041"
+  },
+  {
+    "id": "30722922",
+    "title": "art by Jean Giraud Moebius",
+    "author": "Hairpin",
+    "model": "Krea 2",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/c8e6b757-c8b1-4ea9-809f-33732f097f26/width=600/c8e6b757-c8b1-4ea9-809f-33732f097f26.jpeg",
+        "width": 832,
+        "height": 1248
+      }
+    ],
+    "prompt": "ta86_inkriot, thin black outlines,\nart by Jean Giraud (Moebius), watercolor and ink illustration, a female pilot holding a white helmet, wearing a complex mechanical flight suit with black hoses and cables, standing amidst the wreckage of a crashed mecha or spaceship, looking back over her shoulder, cloudy sky background, another ship flying away in distance, vintage sci-fi comic art style, detailed linework, muted colors.",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "euler",
+      "steps": 8,
+      "cfgScale": 1,
+      "seed": 609371440
+    },
+    "likes": 7498,
+    "createdAt": "2026-08-30T17:04:24.821Z",
+    "sourceUrl": "https://civitai.com/posts/30722922"
+  },
+  {
+    "id": "30753349",
+    "title": "made of sparkling white and black fire",
+    "author": "Cinnadust",
+    "model": "Krea 2",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/d88179fa-6417-4647-b585-e1b865ef1267/width=600/d88179fa-6417-4647-b585-e1b865ef1267.jpeg",
+        "width": 3072,
+        "height": 5504
+      }
+    ],
+    "prompt": "zidiusArt, anime-style tiny fox, made of sparkling white and black fire, sleeping, curled up, cradled in a nest of multicolored painterly styled butterflies. Forest floor at late evening, red and yellow golden sunset lighting. Autumn leaves.",
+    "negativePrompt": null,
+    "params": {
+      "sampler": null,
+      "steps": null,
+      "cfgScale": null,
+      "seed": null
+    },
+    "likes": 7426,
+    "createdAt": "2026-09-01T05:00:00.000Z",
+    "sourceUrl": "https://civitai.com/posts/30753349"
+  },
+  {
+    "id": "30725914",
+    "title": "A hyper-detailed magical realism illustration of an old",
+    "author": "Corcoronel",
+    "model": "Krea 2",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/76c3f545-7c45-40cd-84da-1b97fdb4b2f1/width=600/76c3f545-7c45-40cd-84da-1b97fdb4b2f1.jpeg",
+        "width": 832,
+        "height": 1248
+      }
+    ],
+    "prompt": "zidiusArt, A hyper-detailed magical realism illustration of an old, weathered glass lantern sitting on a wet, icy surface during a heavy snowfall. Inside the lantern, a miniature, cozy winter city scene is captured: narrow cobblestone streets, tall European-style buildings with glowing warm yellow windows, a vintage blue tram, and tiny silhouettes of people walking in the snow. The lantern has a rusty metal cap and handle. Snowflakes are falling both inside and outside the lantern. The wet ground below reflects the warm golden light from the lantern. Atmospheric, cinematic lighting, volumetric fog, cozy winter vibe, masterpiece, 8k resolution, intricate details, watercolor and digital painting hybrid style.",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "euler",
+      "steps": 8,
+      "cfgScale": 1,
+      "seed": 1912977451
+    },
+    "likes": 7409,
+    "createdAt": "2026-08-30T20:01:57.258Z",
+    "sourceUrl": "https://civitai.com/posts/30725914"
+  },
+  {
+    "id": "30717815",
+    "title": "This is a digitally-created",
+    "author": "Tornadovens",
+    "model": "Krea 2",
+    "style": "photo",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/a06c82d4-9262-4305-991c-243e8b0727ce/width=600/a06c82d4-9262-4305-991c-243e8b0727ce.jpeg",
+        "width": 832,
+        "height": 1248
+      }
+    ],
+    "prompt": "This is a digitally-created, hyper-realistic photograph of a tiger in a forest. The tiger, with its orange and black striped fur, is lying on a large, rough-textured log in the foreground. Its right front paw is resting on the log, while its head is lowered, and it gazes intently at a glowing, orange butterfly that is perched on the log's surface. The tiger's eyes are half-closed, giving it a contemplative or curious expression. The butterfly's wings are illuminated with a bright, fiery orange glow, contrasting sharply with the dark forest background. Snowflakes are gently falling, adding a sense of cold and tranquility to the scene. The forest in the background is dimly lit, with tall, dark trees and a blue, misty light filtering through from the right side, creating a mystical atmosphere. The tiger's fur is detailed with realistic textures, and the log has a natural, weathered appearance. The overall composition combines elements of realism and fantasy, highlighting the tiger's majestic presence and the magical, glowing butterfly.",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "euler",
+      "steps": 10,
+      "cfgScale": 1,
+      "seed": 585024298
+    },
+    "likes": 7321,
+    "createdAt": "2026-08-30T12:02:28.317Z",
+    "sourceUrl": "https://civitai.com/posts/30717815"
+  },
+  {
+    "id": "30763794",
+    "title": "one massive continuous tree with thick trunk",
+    "author": "61491060415",
+    "model": "Anima",
+    "style": "anime",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/3039fd70-2279-4f01-b15f-1ee2a84f3c4e/width=600/3039fd70-2279-4f01-b15f-1ee2a84f3c4e.jpeg",
+        "width": 1080,
+        "height": 1920
+      }
+    ],
+    "prompt": "2girls, high school girls, school uniforms, pleated skirts, spring clothes, winter clothes, light cardigan, heavy coat, scarf, waving, street, one massive continuous tree with thick trunk, enormous canopy, no dividers, no black lines, no seams, no gradient blending, abrupt color jumps across tree sections, hard cut seasonal changes, far left spring cherry blossoms, center-left deep green summer leaves, center-right autumn orange leaves, far right bare branches with snow, ground matches each section, damp soil with pink petals, bright green grass, golden leaf piles, white snow on far right only, continuous sidewalk, sky gradient from soft pink to cold blue, visual novel background, 16:9 wide shot. A 16:9 visual novel background of a single continuous street and one massive tree. The tree canopy is divided into four hard, abrupt seasonal zones from left to right, with absolutely no black lines, no seams, and no color blending between the zones. The leftmost branches are covered in spring blossoms, the center-left branches are dense with dark summer leaves, the center-right branches are bright with autumn gold, and the far-right branches are completely bare and snow-covered. Underneath, the same sidewalk spans the frame, but the ground also has sharp distinct transitions: damp soil and scattered petals on the left, bright green grass in the center-left, a pile of golden leaves in the center-right, And the thick white snow that only appears on the very right side. Two girls stand on the sidewalk, the left one waving in a light spring cardigan under the blossoms, and the right one waving back in a heavy winter coat under the snowy branches, with the sky simply shifting from pink to cold blue without any soft blur between the seasonal tree sections.",
+    "negativePrompt": "score_1, score_2, score_3, worst quality, low quality, bad anatomy, bad hands, extra fingers, deformed body, blurry, low resolution, poorly drawn face ,Image cropping，Out of frame",
+    "params": {
+      "sampler": "Euler",
+      "steps": 30,
+      "cfgScale": 5,
+      "seed": 481317953399793
+    },
+    "likes": 7309,
+    "createdAt": "2026-09-01T15:37:59.987Z",
+    "sourceUrl": "https://civitai.com/posts/30763794"
+  },
+  {
+    "id": "30753423",
+    "title": "it's lid popping off in a dramatic fashion",
+    "author": "Cinnadust",
+    "model": "Krea 2",
+    "style": "photo",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/3c26d4a5-5657-4926-a6b8-c53bce032d64/width=600/3c26d4a5-5657-4926-a6b8-c53bce032d64.jpeg",
+        "width": 3072,
+        "height": 5504
+      }
+    ],
+    "prompt": "zidiusArt, a Christmas present, it's lid popping off in a dramatic fashion, revealing its contents. Under the Christmas tree. Different multicolored neon glowing snowflake ornaments hang delicately on the tree. very cute chibi 2D paper cutout kitten pops out from the present, with an adorable UwU face. It wears a pink collar with a Christmas bell on the collars center, is extremely adorable. It's eyes are large and filled with shimmery sparkling glee. The present is adorned with small snowflakes. Atmospheric lighting from the tree. atmosphere is both natural and cute. The kitten is a 2D paper cutout, hand-drawn with colored gel pens. A professional image taken from a Sony A7R IV, 50mm f/1.8 lens, resembling real-life photography, natural lighting, professional photography, soft natural lighting, realistic depth of field, shallow depth of field.",
+    "negativePrompt": null,
+    "params": {
+      "sampler": null,
+      "steps": null,
+      "cfgScale": null,
+      "seed": null
+    },
+    "likes": 7274,
+    "createdAt": "2026-09-01T05:00:00.000Z",
+    "sourceUrl": "https://civitai.com/posts/30753423"
+  },
+  {
+    "id": "30727275",
+    "title": "Strictly two-color duotone print",
+    "author": "FL1MP3R",
+    "model": "Krea 2",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/34bdebe8-2083-45d3-9413-6fb5d9835161/width=600/34bdebe8-2083-45d3-9413-6fb5d9835161.jpeg",
+        "width": 1200,
+        "height": 1600
+      },
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/430c9130-6253-4a54-9a15-2a3489cd76af/width=600/430c9130-6253-4a54-9a15-2a3489cd76af.jpeg",
+        "width": 1190,
+        "height": 1600
+      }
+    ],
+    "prompt": "<lora:training_3119606-20260829211942745:1> Strictly two-color duotone print, no full color palette, screentone dots visible across all surfaces instead of smooth gradients, coarse uneven woodcut-like cross-hatching, ragged jagged linework.\nA heavily armored knight sits relaxing in an old clawfoot bathtub, submerged up to the chest in steaming hot water, thick wisps of steam rising visibly off the surface. His body is in a loose, relaxed, leaned-back posture, one arm resting comfortably along the rim of the tub. His great helm with a horizontal visor slit is turned directly toward the viewer, facing forward as if looking straight at them. His other arm is raised with a thumb up gesture facing the viewer, while the rest of his posture stays casual and relaxed. A long sword leans propped against the front of the tub, blade angled into the ground. The tub sits in the middle of a vast field of tall red poppies stretching to the horizon, with a dramatic mountain range in the distance and a glowing sunset sky behind it.\nIn the upper left corner, a stylized ornate bordered rectangular message box with decorative corner flourishes displays stylish russian text reading: \"Броня не снимается, а мнение долбоёбов меня не ебёт.\"",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "Euler",
+      "steps": 8,
+      "cfgScale": 1,
+      "seed": 2703093892
+    },
+    "likes": 14401,
+    "createdAt": "2026-08-31T00:01:00.000Z",
+    "sourceUrl": "https://civitai.com/posts/30727275"
+  },
+  {
+    "id": "30736923",
+    "title": "An ethereal dark fantasy illustration of a lone…",
+    "author": "Rick13972",
+    "model": "Krea 2",
+    "style": "illustration",
+    "images": [
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/d79a1c07-a16d-4229-aa33-b4170d04f8b3/width=600/d79a1c07-a16d-4229-aa33-b4170d04f8b3.jpeg",
+        "width": 1256,
+        "height": 1672
+      },
+      {
+        "src": "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/dcb5a3e7-5aef-4270-8dfa-8446d9f72403/width=600/dcb5a3e7-5aef-4270-8dfa-8446d9f72403.jpeg",
+        "width": 1256,
+        "height": 1672
+      }
+    ],
+    "prompt": "An ethereal dark fantasy illustration of a lone male wandering swordsman standing in a flooded medieval city, caught in the quiet moment before drawing his sword, one hand firmly gripping the sword hilt while the blade remains completely sheathed, his body slightly twisted in anticipation, long weathered coat drifting in the cold wind, monumental ruined stone towers disappearing into mist behind him, enormous empty streets covered with shallow reflective water, delicate flowing ink lines, wispy hand-drawn contours, muted watercolor washes, charcoal black, deep blue-gray and dusty violet palette, tiny accents of faded crimson on his clothing, fragile human figure contrasted against overwhelming architecture, extensive negative space, melancholic silence, surreal religious atmosphere, hauntingly beautiful, subtle paper texture, cinematic composition, painterly 1980s Japanese fantasy illustration",
+    "negativePrompt": null,
+    "params": {
+      "sampler": "Euler",
+      "steps": 8,
+      "cfgScale": 1,
+      "seed": 1080688047113781
+    },
+    "likes": 14189,
+    "createdAt": "2026-08-31T15:59:00.000Z",
+    "sourceUrl": "https://civitai.com/posts/30736923"
+  }
+]
