@@ -1,12 +1,12 @@
 import "server-only";
 
 import { CHALLENGES } from "../challenges";
-import { db } from "./db";
+import { getDb } from "./db";
 
 export type ChallengeStatus = { slug: string; bestScore: number | null; attempts: number };
 
 export function saveSubmission(userId: number, slug: string, prompt: string, score: number) {
-  db.prepare("INSERT INTO submissions (user_id, challenge_slug, prompt, score) VALUES (?, ?, ?, ?)").run(
+  getDb().prepare("INSERT INTO submissions (user_id, challenge_slug, prompt, score) VALUES (?, ?, ?, ?)").run(
     userId,
     slug,
     prompt,
@@ -16,7 +16,7 @@ export function saveSubmission(userId: number, slug: string, prompt: string, sco
 
 export function challengeStatuses(userId: number | null): Map<string, ChallengeStatus> {
   const rows = userId
-    ? (db
+    ? (getDb()
         .prepare(
           `SELECT challenge_slug AS slug, MAX(score) AS bestScore, COUNT(*) AS attempts
            FROM submissions WHERE user_id = ? GROUP BY challenge_slug`,
@@ -27,7 +27,7 @@ export function challengeStatuses(userId: number | null): Map<string, ChallengeS
 }
 
 export function lastSubmission(userId: number, slug: string) {
-  return db
+  return getDb()
     .prepare(
       "SELECT prompt, score FROM submissions WHERE user_id = ? AND challenge_slug = ? ORDER BY id DESC LIMIT 1",
     )

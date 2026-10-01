@@ -4,7 +4,7 @@ import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { db } from "./db";
+import { getDb } from "./db";
 
 const COOKIE = "promhub_session";
 const SESSION_DAYS = 30;
@@ -26,7 +26,7 @@ export function verifyPassword(password: string, stored: string) {
 export async function createSession(userId: number) {
   const token = randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  db.prepare("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)").run(
+  getDb().prepare("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)").run(
     token,
     userId,
     expires.toISOString(),
@@ -43,7 +43,7 @@ export async function createSession(userId: number) {
 export async function destroySession() {
   const store = await cookies();
   const token = store.get(COOKIE)?.value;
-  if (token) db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
+  if (token) getDb().prepare("DELETE FROM sessions WHERE token = ?").run(token);
   store.delete(COOKIE);
 }
 
@@ -51,7 +51,7 @@ export async function destroySession() {
 export const getCurrentUser = cache(async (): Promise<User | null> => {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
-  const row = db
+  const row = getDb()
     .prepare(
       `SELECT u.id, u.username FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.token = ? AND s.expires_at > ?`,
