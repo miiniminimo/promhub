@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/server/auth";
 
-const NAV = [
-  { href: "/", label: "Explore", className: "hidden sm:block" },
-  { href: "/tests", label: "Prompt Test", className: "" },
-];
+// The logo links to the explore feed, so it has no separate nav item.
+const NAV = [{ href: "/tests", label: "Prompt Test" }];
 
 export async function Header() {
   const user = await getCurrentUser();
@@ -17,7 +15,7 @@ export async function Header() {
         </Link>
         <nav className="flex gap-6">
           {NAV.map((item) => (
-            <Link key={item.href} href={item.href} className={`label-mono link-hover text-xs tracking-[1.8px] ${item.className}`}>
+            <Link key={item.href} href={item.href} className="label-mono link-hover text-xs tracking-[1.8px]">
               {item.label}
             </Link>
           ))}
