@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { createRepoAction } from "@/app/actions";
 import { STYLES } from "@/lib/styles";
 import { PromptComposer } from "./PromptComposer";
@@ -23,7 +23,16 @@ export function NewPromptForm() {
   }
 
   return (
-    <form action={action} className="space-y-6">
+    <form
+      // Submit manually instead of `action={...}` so React doesn't reset the fields when the
+      // server returns a validation error (the chat-built prompt lives in state either way).
+      onSubmit={(e) => {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        startTransition(() => action(data));
+      }}
+      className="space-y-6"
+    >
       <label className="block">
         <span className="label-mono text-secondary">제목 *</span>
         <input name="title" required placeholder="예: 시네마틱 제품 사진 프롬프트" className={`${fieldClass} mt-2`} />

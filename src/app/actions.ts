@@ -124,7 +124,8 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
   const prompt = String(formData.get("prompt") ?? "").trim();
   const negativePrompt = String(formData.get("negativePrompt") ?? "").trim();
   const visibility = formData.get("visibility") === "private" ? "private" : "public";
-  if (!title || !model || !prompt) return { error: "제목, 사용 모델, 프롬프트는 필수입니다." };
+  if (!title || !model) return { error: "제목과 사용 모델은 필수입니다." };
+  if (!prompt) return { error: "AI와 대화해서 프롬프트를 먼저 만들어주세요." };
   if (!STYLES.includes(style)) return { error: "스타일을 선택해주세요." };
 
   let cover = null;

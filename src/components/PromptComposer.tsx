@@ -3,7 +3,6 @@
 import { useRef, useState, useTransition } from "react";
 import { chatPromptBuilder, type ChatFileInfo, uploadChatFileAction } from "@/app/actions";
 import type { Style } from "@/lib/types";
-import { monoFieldClass } from "./ui";
 
 /** A chat attachment already stored on the server; `preview` is a local object URL for images. */
 type Attachment = ChatFileInfo & { preview?: string };
@@ -32,17 +31,11 @@ function AttachmentChip({ file, onRemove }: { file: Attachment; onRemove?: () =>
   );
 }
 
-const TABS = [
-  { value: "chat", label: "AI와 대화로 만들기" },
-  { value: "manual", label: "직접 입력" },
-] as const;
-
 /**
- * Prompt + negative prompt inputs for the New Prompt form. The values are always
- * submitted through hidden inputs, whichever tab the user ends up on.
+ * Builds the New Prompt form's prompt through a chat with the AI. The current draft is
+ * read-only here (changes are requested in the chat) and is submitted via hidden inputs.
  */
 export function PromptComposer() {
-  const [tab, setTab] = useState<"chat" | "manual">("chat");
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -122,184 +115,141 @@ export function PromptComposer() {
       <input type="hidden" name="prompt" value={prompt} />
       <input type="hidden" name="negativePrompt" value={negativePrompt} />
 
-      <div className="flex items-end justify-between gap-4 border-b border-frame">
-        <span className="label-mono pb-3 text-secondary">프롬프트 *</span>
-        <div className="flex gap-5">
-          {TABS.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setTab(t.value)}
-              className={`label-mono pb-3 tracking-[1.5px] transition-colors duration-150 ${
-                tab === t.value
-                  ? "text-mint shadow-[inset_0_-1px_0_0_var(--color-mint)]"
-                  : "text-secondary hover:text-link-hover"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+      <div className="flex items-end justify-between gap-4 border-b border-frame pb-3">
+        <span className="label-mono text-secondary">프롬프트 *</span>
+        <span className="label-mono text-mint">AI와 대화로 만들기</span>
       </div>
 
-      {tab === "chat" ? (
-        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          {/* Chat */}
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragging(false);
-              if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
-            }}
-            className={`flex h-[420px] flex-col rounded-tile border transition-colors duration-150 ${
-              dragging ? "border-mint" : "border-frame"
-            }`}
-          >
-            <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto p-4">
-              {messages.length === 0 && (
-                <p className="text-sm leading-relaxed text-secondary">
-                  만들고 싶은 결과물을 설명해 주세요. AI가 질문하면서 프롬프트를 완성해 줘요.
-                  <br />
-                  <span className="text-muted">예: 비 오는 밤 네온사인 거리를 걷는 고양이</span>
-                  <br />
-                  <br />
-                  📎 참고 이미지를 올리면 스타일을, 대화 기록(txt·md·pdf)을 올리면 그 안의 프롬프트를 정리해 줘요.
-                  파일을 여기로 끌어다 놓아도 돼요.
-                </p>
-              )}
-              {messages.map((m, i) => (
-                <div key={i} className={`flex flex-col gap-1.5 ${m.role === "user" ? "items-end" : "items-start"}`}>
-                  {m.files && m.files.length > 0 && (
-                    <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
-                      {m.files.map((f) => (
-                        <AttachmentChip key={f.id} file={f} />
-                      ))}
-                    </div>
-                  )}
-                  {m.text && (
-                    <p
-                      className={`max-w-[85%] whitespace-pre-wrap rounded-tile px-4 py-2.5 text-[14px] leading-relaxed ${
-                        m.role === "user" ? "bg-mint text-black" : "bg-slate text-muted"
-                      }`}
-                    >
-                      {m.text}
-                    </p>
-                  )}
-                </div>
-              ))}
-              {pending && <p className="label-mono text-secondary">AI가 프롬프트를 다듬는 중…</p>}
-            </div>
-            {error && <p className="border-t border-frame px-4 py-2 text-sm text-tile-pink">{error}</p>}
-            {(attachments.length > 0 || uploading > 0) && (
-              <div className="flex flex-wrap gap-1.5 border-t border-frame px-3 pt-3">
-                {attachments.map((f) => (
-                  <AttachmentChip
-                    key={f.id}
-                    file={f}
-                    onRemove={() => setAttachments((prev) => prev.filter((a) => a.id !== f.id))}
-                  />
-                ))}
-                {uploading > 0 && <span className="label-mono self-center text-secondary">업로드 중…</span>}
-              </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        {/* Chat */}
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+          }}
+          className={`flex h-[420px] flex-col rounded-tile border transition-colors duration-150 ${
+            dragging ? "border-mint" : "border-frame"
+          }`}
+        >
+          <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+            {messages.length === 0 && (
+              <p className="text-sm leading-relaxed text-secondary">
+                만들고 싶은 결과물을 설명해 주세요. AI가 질문하면서 프롬프트를 완성해 줘요.
+                <br />
+                <span className="text-muted">예: 비 오는 밤 네온사인 거리를 걷는 고양이</span>
+                <br />
+                <br />
+                📎 참고 이미지를 올리면 스타일을, 대화 기록(txt·md·pdf)을 올리면 그 안의 프롬프트를 정리해 줘요.
+                파일을 여기로 끌어다 놓아도 돼요.
+              </p>
             )}
-            <div className="flex gap-2 border-t border-frame p-3">
-              <label
-                title="파일 첨부 (이미지·텍스트·PDF)"
-                className="cursor-pointer self-end rounded-full bg-slate px-3 py-2 text-sm text-muted transition-colors duration-150 hover:bg-white/20"
-              >
-                📎
-                <input
-                  type="file"
-                  multiple
-                  accept={ACCEPT}
-                  className="sr-only"
-                  onChange={(e) => {
-                    if (e.target.files?.length) addFiles(e.target.files);
-                    e.target.value = "";
-                  }}
+            {messages.map((m, i) => (
+              <div key={i} className={`flex flex-col gap-1.5 ${m.role === "user" ? "items-end" : "items-start"}`}>
+                {m.files && m.files.length > 0 && (
+                  <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
+                    {m.files.map((f) => (
+                      <AttachmentChip key={f.id} file={f} />
+                    ))}
+                  </div>
+                )}
+                {m.text && (
+                  <p
+                    className={`max-w-[85%] whitespace-pre-wrap rounded-tile px-4 py-2.5 text-[14px] leading-relaxed ${
+                      m.role === "user" ? "bg-mint text-black" : "bg-slate text-muted"
+                    }`}
+                  >
+                    {m.text}
+                  </p>
+                )}
+              </div>
+            ))}
+            {pending && <p className="label-mono text-secondary">AI가 프롬프트를 다듬는 중…</p>}
+          </div>
+          {error && <p className="border-t border-frame px-4 py-2 text-sm text-tile-pink">{error}</p>}
+          {(attachments.length > 0 || uploading > 0) && (
+            <div className="flex flex-wrap gap-1.5 border-t border-frame px-3 pt-3">
+              {attachments.map((f) => (
+                <AttachmentChip
+                  key={f.id}
+                  file={f}
+                  onRemove={() => setAttachments((prev) => prev.filter((a) => a.id !== f.id))}
                 />
-              </label>
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                    e.preventDefault();
-                    send();
-                  }
+              ))}
+              {uploading > 0 && <span className="label-mono self-center text-secondary">업로드 중…</span>}
+            </div>
+          )}
+          <div className="flex gap-2 border-t border-frame p-3">
+            <label
+              title="파일 첨부 (이미지·텍스트·PDF)"
+              className="cursor-pointer self-end rounded-full bg-slate px-3 py-2 text-sm text-muted transition-colors duration-150 hover:bg-white/20"
+            >
+              📎
+              <input
+                type="file"
+                multiple
+                accept={ACCEPT}
+                className="sr-only"
+                onChange={(e) => {
+                  if (e.target.files?.length) addFiles(e.target.files);
+                  e.target.value = "";
                 }}
-                rows={2}
-                placeholder="메시지 입력 (Enter 전송, Shift+Enter 줄바꿈)"
-                className="flex-1 resize-none bg-transparent px-2 py-1 text-[14px] text-white placeholder:text-secondary focus:outline-none"
               />
-              <button
-                type="button"
-                onClick={send}
-                disabled={pending || uploading > 0 || (!input.trim() && attachments.length === 0)}
-                className="btn-mint self-end disabled:opacity-40"
-              >
-                전송
-              </button>
-            </div>
-          </div>
-
-          {/* Live draft */}
-          <div className="flex h-[420px] flex-col rounded-tile border border-frame">
-            <div className="flex items-center justify-between border-b border-frame px-4 py-2.5">
-              <span className="label-mono text-secondary">
-                초안 {ready && <span className="ml-2 text-mint">● 완성</span>}
-              </span>
-              <button
-                type="button"
-                onClick={() => setTab("manual")}
-                disabled={!prompt}
-                className="label-mono link-hover text-mint disabled:text-secondary"
-              >
-                직접 수정하기 →
-              </button>
-            </div>
-            <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3 font-mono text-[13px] leading-relaxed">
-              {prompt ? (
-                <>
-                  <p className="whitespace-pre-wrap break-words text-muted">{prompt}</p>
-                  {negativePrompt && (
-                    <div>
-                      <p className="label-mono text-secondary">Negative</p>
-                      <p className="mt-1 whitespace-pre-wrap break-words text-secondary">{negativePrompt}</p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="text-secondary">대화를 시작하면 여기에 프롬프트 초안이 만들어져요.</p>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-4 space-y-6">
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            rows={8}
-            placeholder="프롬프트를 직접 입력하세요"
-            className={monoFieldClass}
-          />
-          <label className="block">
-            <span className="label-mono text-secondary">Negative prompt</span>
+            </label>
             <textarea
-              value={negativePrompt}
-              onChange={(e) => setNegativePrompt(e.target.value)}
-              rows={3}
-              className={`${monoFieldClass} mt-2`}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              rows={2}
+              placeholder="메시지 입력 (Enter 전송, Shift+Enter 줄바꿈)"
+              className="flex-1 resize-none bg-transparent px-2 py-1 text-[14px] text-white placeholder:text-secondary focus:outline-none"
             />
-          </label>
+            <button
+              type="button"
+              onClick={send}
+              disabled={pending || uploading > 0 || (!input.trim() && attachments.length === 0)}
+              className="btn-mint self-end disabled:opacity-40"
+            >
+              전송
+            </button>
+          </div>
         </div>
-      )}
+
+        {/* Live draft */}
+        <div className="flex h-[420px] flex-col rounded-tile border border-frame">
+          <div className="flex items-center justify-between border-b border-frame px-4 py-2.5">
+            <span className="label-mono text-secondary">
+              초안 {ready && <span className="ml-2 text-mint">● 완성</span>}
+            </span>
+            <span className="text-xs text-secondary">고칠 부분은 채팅으로 요청하세요</span>
+          </div>
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3 font-mono text-[13px] leading-relaxed">
+            {prompt ? (
+              <>
+                <p className="whitespace-pre-wrap break-words text-muted">{prompt}</p>
+                {negativePrompt && (
+                  <div>
+                    <p className="label-mono text-secondary">Negative</p>
+                    <p className="mt-1 whitespace-pre-wrap break-words text-secondary">{negativePrompt}</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-secondary">대화를 시작하면 여기에 프롬프트 초안이 만들어져요.</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
