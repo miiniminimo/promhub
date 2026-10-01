@@ -29,29 +29,38 @@ export function NewPromptForm() {
         <input name="title" required placeholder="예: 시네마틱 제품 사진 프롬프트" className={`${fieldClass} mt-2`} />
       </label>
 
+      {/* Both columns: label, 8px gap, then a 40px-tall control so the rows line up. */}
       <div className="grid gap-6 sm:grid-cols-2">
         <label className="block">
-          <span className="label-mono text-secondary">사용 모델 *</span>
-          <input name="model" required list="models" placeholder="예: Flux.1 D" className={`${fieldClass} mt-2`} />
+          <span className="label-mono block text-secondary">사용 모델 *</span>
+          <input
+            name="model"
+            required
+            list="models"
+            placeholder="예: Flux.1 D"
+            className={`${fieldClass} mt-2 h-10`}
+          />
           <datalist id="models">
             {MODEL_SUGGESTIONS.map((m) => (
               <option key={m} value={m} />
             ))}
           </datalist>
         </label>
-        <fieldset>
-          <legend className="label-mono text-secondary">스타일 *</legend>
-          <div className="mt-2 flex gap-2">
+        <div>
+          <span id="style-label" className="label-mono block text-secondary">
+            스타일 *
+          </span>
+          <div role="radiogroup" aria-labelledby="style-label" className="mt-2 flex gap-2">
             {STYLES.map((s, i) => (
               <label key={s.value} className="cursor-pointer">
                 <input type="radio" name="style" value={s.value} defaultChecked={i === 0} className="peer sr-only" />
-                <span className="label-mono block rounded-pill border border-frame px-4 py-2 text-secondary peer-checked:border-mint peer-checked:text-mint">
+                <span className="label-mono flex h-10 items-center rounded-pill border border-frame px-4 text-secondary peer-checked:border-mint peer-checked:text-mint peer-focus-visible:outline peer-focus-visible:outline-1 peer-focus-visible:outline-focus">
                   {s.label}
                 </span>
               </label>
             ))}
           </div>
-        </fieldset>
+        </div>
       </div>
 
       <PromptComposer />
