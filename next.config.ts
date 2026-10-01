@@ -2,8 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
-    // Allow result-image uploads (≤5MB) through Server Actions.
-    serverActions: { bodySizeLimit: "6mb" },
+    // Allow image (≤5MB) and chat-file (≤10MB) uploads through Server Actions.
+    serverActions: { bodySizeLimit: "12mb" },
   },
   images: {
     // MVP: images are hotlinked from the Civitai CDN; skip optimization until real storage exists.
