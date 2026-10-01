@@ -29,7 +29,11 @@ function open() {
   return db;
 }
 
-// Reuse one connection across dev hot reloads.
+// Opened lazily on first use (not at import time) so `next build` workers that only
+// analyse routes never touch the file concurrently. Reused across dev hot reloads.
 const globalForDb = globalThis as unknown as { promhubDb?: Database.Database };
-export const db = globalForDb.promhubDb ?? open();
-globalForDb.promhubDb = db;
+
+export function getDb() {
+  globalForDb.promhubDb ??= open();
+  return globalForDb.promhubDb;
+}

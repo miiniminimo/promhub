@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 import type { Post, PostImage, Style } from "../types";
-import { db } from "./db";
+import { getDb } from "./db";
 
 export type Visibility = "public" | "private";
 
@@ -94,14 +94,14 @@ export function slugify(text: string) {
 
 /** Repo visible to `viewerId` (private repos only to their owner). */
 export function getRepo(id: number, viewerId: number | null) {
-  const row = db.prepare(`${SELECT_REPO} WHERE r.id = ?`).get(id) as RepoRow | undefined;
+  const row = getDb().prepare(`${SELECT_REPO} WHERE r.id = ?`).get(id) as RepoRow | undefined;
   if (!row) return null;
   if (row.visibility === "private" && row.owner_id !== viewerId) return null;
   return toSummary(row);
 }
 
 export function getCommits(repoId: number): Commit[] {
-  return db
+  return getDb()
     .prepare(
       `SELECT id, hash, message, prompt, negative_prompt AS negativePrompt, created_at AS createdAt
        FROM commits WHERE repo_id = ? ORDER BY id`,
@@ -111,14 +111,14 @@ export function getCommits(repoId: number): Commit[] {
 
 export function listUserRepos(ownerId: number) {
   return (
-    db.prepare(`${SELECT_REPO} WHERE r.owner_id = ? ORDER BY r.updated_at DESC`).all(ownerId) as RepoRow[]
+    getDb().prepare(`${SELECT_REPO} WHERE r.owner_id = ? ORDER BY r.updated_at DESC`).all(ownerId) as RepoRow[]
   ).map(toSummary);
 }
 
 /** Public original prompts (not forks) for the explore feed. */
 export function listPublicOriginals() {
   return (
-    db
+    getDb()
       .prepare(
         `${SELECT_REPO} WHERE r.visibility = 'public' AND r.forked_post_id IS NULL AND r.forked_repo_id IS NULL
          ORDER BY r.created_at DESC`,
@@ -144,8 +144,8 @@ type NewRepo = {
 };
 
 export function createRepo(input: NewRepo): number {
-  return db.transaction(() => {
-    const { lastInsertRowid } = db
+  return getDb().transaction(() => {
+    const { lastInsertRowid } = getDb()
       .prepare(
         `INSERT INTO repos (owner_id, name, description, model, style, cover_json, visibility,
            forked_post_id, forked_repo_id, forked_label)
@@ -164,7 +164,7 @@ export function createRepo(input: NewRepo): number {
         input.forkedLabel ?? null,
       );
     const repoId = Number(lastInsertRowid);
-    db.prepare(
+    getDb().prepare(
       "INSERT INTO commits (repo_id, hash, message, prompt, negative_prompt) VALUES (?, ?, ?, ?, ?)",
     ).run(repoId, shortHash(), input.message, input.prompt, input.negativePrompt);
     return repoId;
@@ -210,27 +210,27 @@ export function addCommit(
   repoId: number,
   change: { message: string; prompt: string; negativePrompt: string | null },
 ) {
-  db.transaction(() => {
-    db.prepare(
+  getDb().transaction(() => {
+    getDb().prepare(
       "INSERT INTO commits (repo_id, hash, message, prompt, negative_prompt) VALUES (?, ?, ?, ?, ?)",
     ).run(repoId, shortHash(), change.message, change.prompt, change.negativePrompt);
-    db.prepare("UPDATE repos SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(repoId);
+    getDb().prepare("UPDATE repos SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(repoId);
   })();
 }
 
 export function setVisibility(repoId: number, visibility: Visibility) {
-  db.prepare("UPDATE repos SET visibility = ? WHERE id = ?").run(visibility, repoId);
+  getDb().prepare("UPDATE repos SET visibility = ? WHERE id = ?").run(visibility, repoId);
 }
 
 export function saveImage(ownerId: number, mime: string, data: Buffer) {
-  const { lastInsertRowid } = db
+  const { lastInsertRowid } = getDb()
     .prepare("INSERT INTO images (owner_id, mime, data) VALUES (?, ?, ?)")
     .run(ownerId, mime, data);
   return Number(lastInsertRowid);
 }
 
 export function getImage(id: number) {
-  return db.prepare("SELECT mime, data FROM images WHERE id = ?").get(id) as
+  return getDb().prepare("SELECT mime, data FROM images WHERE id = ?").get(id) as
     | { mime: string; data: Buffer }
     | undefined;
 }

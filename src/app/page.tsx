@@ -1,9 +1,12 @@
+import { connection } from "next/server";
 import { Feed } from "@/components/Feed";
 import { POSTS } from "@/lib/posts";
 import { listPublicOriginals } from "@/lib/server/repos";
 import type { FeedItem } from "@/lib/types";
 
-export default function Home() {
+export default async function Home() {
+  // better-sqlite3 is synchronous; skip prerendering so the query runs per request.
+  await connection();
   const userPrompts: FeedItem[] = listPublicOriginals().map((r) => ({
     key: `repo-${r.id}`,
     href: `/repos/${r.id}`,
