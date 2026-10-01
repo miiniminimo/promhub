@@ -3,7 +3,8 @@
 import { useActionState, useState } from "react";
 import { createRepoAction } from "@/app/actions";
 import { STYLES } from "@/lib/styles";
-import { fieldClass, monoFieldClass } from "./ui";
+import { PromptComposer } from "./PromptComposer";
+import { fieldClass } from "./ui";
 
 const MODEL_SUGGESTIONS = ["Flux.1 D", "SDXL 1.0", "Pony", "Illustrious", "Krea 2", "OpenAI", "Imagen4", "Claude Opus 5.5", "GPT-5"];
 
@@ -52,14 +53,7 @@ export function NewPromptForm() {
         </fieldset>
       </div>
 
-      <label className="block">
-        <span className="label-mono text-secondary">프롬프트 *</span>
-        <textarea name="prompt" required rows={8} className={`${monoFieldClass} mt-2`} />
-      </label>
-      <label className="block">
-        <span className="label-mono text-secondary">Negative prompt</span>
-        <textarea name="negativePrompt" rows={3} className={`${monoFieldClass} mt-2`} />
-      </label>
+      <PromptComposer />
 
       <div>
         <span className="label-mono text-secondary">결과 이미지 (선택, 5MB 이하)</span>
