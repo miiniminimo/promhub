@@ -25,6 +25,9 @@ export type RepoSummary = {
   updatedAt: string;
 };
 
+/** A source image: `src` is what we render, `link` the original page/URL it came from (if any). */
+export type RepoSource = { src: string; link: string | null };
+
 export type Commit = {
   id: number;
   hash: string;
@@ -109,6 +112,12 @@ export function getCommits(repoId: number): Commit[] {
     .all(repoId) as Commit[];
 }
 
+export function getSources(repoId: number): RepoSource[] {
+  return getDb()
+    .prepare("SELECT src, link FROM repo_sources WHERE repo_id = ? ORDER BY sort_order")
+    .all(repoId) as RepoSource[];
+}
+
 export function listUserRepos(ownerId: number) {
   return (
     getDb().prepare(`${SELECT_REPO} WHERE r.owner_id = ? ORDER BY r.updated_at DESC`).all(ownerId) as RepoRow[]
@@ -138,6 +147,7 @@ type NewRepo = {
   prompt: string;
   negativePrompt: string | null;
   message: string;
+  sources?: RepoSource[];
   forkedPostId?: string;
   forkedRepoId?: number;
   forkedLabel?: string;
@@ -167,6 +177,10 @@ export function createRepo(input: NewRepo): number {
     getDb().prepare(
       "INSERT INTO commits (repo_id, hash, message, prompt, negative_prompt) VALUES (?, ?, ?, ?, ?)",
     ).run(repoId, shortHash(), input.message, input.prompt, input.negativePrompt);
+    const insertSource = getDb().prepare(
+      "INSERT INTO repo_sources (repo_id, src, link, sort_order) VALUES (?, ?, ?, ?)",
+    );
+    input.sources?.forEach((s, i) => insertSource.run(repoId, s.src, s.link, i));
     return repoId;
   })();
 }
@@ -201,6 +215,7 @@ export function forkRepo(ownerId: number, source: RepoSummary) {
     prompt: head.prompt,
     negativePrompt: head.negativePrompt,
     message: `Fork from ${source.owner}/${source.name}@${head.hash}`,
+    sources: getSources(source.id),
     forkedRepoId: source.id,
     forkedLabel: `${source.owner} / ${source.name}`,
   });
@@ -233,4 +248,31 @@ export function getImage(id: number) {
   return getDb().prepare("SELECT mime, data FROM images WHERE id = ?").get(id) as
     | { mime: string; data: Buffer }
     | undefined;
+}
+
+export function imageOwner(id: number) {
+  const row = getDb().prepare("SELECT owner_id FROM images WHERE id = ?").get(id) as { owner_id: number } | undefined;
+  return row?.owner_id ?? null;
+}
+
+// ---------- Chat attachments ----------
+
+export type ChatFile = { id: number; name: string; mime: string; data: Buffer };
+
+export function saveChatFile(ownerId: number, name: string, mime: string, data: Buffer) {
+  const { lastInsertRowid } = getDb()
+    .prepare("INSERT INTO chat_files (owner_id, name, mime, data) VALUES (?, ?, ?, ?)")
+    .run(ownerId, name, mime, data);
+  return Number(lastInsertRowid);
+}
+
+/** The requested chat files that belong to `ownerId`, in the requested order. */
+export function getChatFiles(ownerId: number, ids: number[]): ChatFile[] {
+  if (ids.length === 0) return [];
+  const rows = getDb()
+    .prepare(
+      `SELECT id, name, mime, data FROM chat_files WHERE owner_id = ? AND id IN (${ids.map(() => "?").join(",")})`,
+    )
+    .all(ownerId, ...ids) as ChatFile[];
+  return ids.flatMap((id) => rows.filter((r) => r.id === id));
 }

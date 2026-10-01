@@ -6,8 +6,21 @@ import { getChallenge, grade, scoreOf, type TestResult } from "@/lib/challenges"
 import { getPost } from "@/lib/posts";
 import { createSession, destroySession, getCurrentUser, hashPassword, requireUser, verifyPassword } from "@/lib/server/auth";
 import { getDb } from "@/lib/server/db";
-import { addCommit, createRepo, forkPost, forkRepo, getRepo, saveImage, setVisibility, slugify } from "@/lib/server/repos";
-import { buildPrompt, type BuilderContext, type BuilderResult, type BuilderTurn } from "@/lib/server/prompt-builder";
+import {
+  addCommit,
+  createRepo,
+  forkPost,
+  forkRepo,
+  getChatFiles,
+  getRepo,
+  imageOwner,
+  type RepoSource,
+  saveChatFile,
+  saveImage,
+  setVisibility,
+  slugify,
+} from "@/lib/server/repos";
+import { buildPrompt, type BuilderContext, type BuilderResult, DEFAULT_FILE_MESSAGE } from "@/lib/server/prompt-builder";
 import { saveSubmission } from "@/lib/server/submissions";
 import type { Style } from "@/lib/types";
 
@@ -127,6 +140,9 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
     };
   }
 
+  const sources = parseSources(formData.getAll("sources"), user.id);
+  if (typeof sources === "string") return { error: sources };
+
   const repoId = createRepo({
     ownerId: user.id,
     name: slugify(title),
@@ -138,8 +154,48 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
     prompt,
     negativePrompt: negativePrompt || null,
     message: "Initial commit",
+    sources,
   });
   redirect(`/repos/${repoId}`);
+}
+
+const MAX_SOURCES = 4;
+const UPLOADED_IMAGE = /^\/api\/images\/(\d+)$/;
+
+/** Validates the New Prompt form's source-image entries; returns an error message on failure. */
+function parseSources(values: FormDataEntryValue[], ownerId: number): RepoSource[] | string {
+  if (values.length > MAX_SOURCES) return `소스 이미지는 최대 ${MAX_SOURCES}개까지 추가할 수 있습니다.`;
+  const sources: RepoSource[] = [];
+  for (const value of values) {
+    const src = String(value).trim();
+    const uploaded = src.match(UPLOADED_IMAGE);
+    if (uploaded) {
+      if (imageOwner(Number(uploaded[1])) !== ownerId) return "소스 이미지를 찾을 수 없습니다.";
+      sources.push({ src, link: null });
+      continue;
+    }
+    try {
+      const url = new URL(src);
+      if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error();
+      sources.push({ src: url.toString(), link: url.toString() });
+    } catch {
+      return "소스 이미지 링크는 http(s) 주소여야 합니다.";
+    }
+  }
+  return sources;
+}
+
+/** Uploads one source image for the New Prompt form; the returned `src` is submitted with the form. */
+export async function uploadSourceImageAction(
+  formData: FormData,
+): Promise<{ ok: true; src: string } | { ok: false; error: string }> {
+  const user = await requireUser("/new");
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "파일을 선택해주세요." };
+  if (!file.type.startsWith("image/")) return { ok: false, error: "이미지 파일만 올릴 수 있습니다." };
+  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "이미지는 5MB 이하만 올릴 수 있습니다." };
+  const id = saveImage(user.id, file.type, Buffer.from(await file.arrayBuffer()));
+  return { ok: true, src: `/api/images/${id}` };
 }
 
 // ---------- Prompt tests ----------
@@ -163,16 +219,62 @@ export async function runTestAction(slug: string, prompt: string, submit: boolea
 
 // ---------- AI prompt builder ----------
 
+export type ChatFileInfo = { id: number; name: string; mime: string };
+
+const CHAT_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const CHAT_TEXT_EXT = /\.(txt|md|markdown|json|csv|log|html?)$/i;
+const MAX_CHAT_FILE_BYTES = 10 * 1024 * 1024;
+
+/** Stores a file attached in the prompt-builder chat; later turns refer to it by id. */
+export async function uploadChatFileAction(
+  formData: FormData,
+): Promise<{ ok: true; file: ChatFileInfo } | { ok: false; error: string }> {
+  const user = await requireUser("/new");
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "파일을 선택해주세요." };
+  if (file.size > MAX_CHAT_FILE_BYTES) return { ok: false, error: `${file.name}: 10MB 이하만 올릴 수 있습니다.` };
+
+  let mime = file.type;
+  if (CHAT_IMAGE_TYPES.includes(mime) || mime === "application/pdf") {
+    // supported as-is
+  } else if (mime.startsWith("text/") || CHAT_TEXT_EXT.test(file.name)) {
+    mime = "text/plain";
+  } else {
+    return { ok: false, error: `${file.name}: 이미지(JPG·PNG·GIF·WEBP), 텍스트, PDF 파일만 올릴 수 있습니다.` };
+  }
+  const id = saveChatFile(user.id, file.name, mime, Buffer.from(await file.arrayBuffer()));
+  return { ok: true, file: { id, name: file.name, mime } };
+}
+
+export type ChatTurnInput = { role: "user" | "assistant"; content: string; fileIds?: number[] };
+
+const MAX_FILES_PER_TURN = 5;
+
 export async function chatPromptBuilder(
-  history: BuilderTurn[],
+  history: ChatTurnInput[],
   message: string,
+  fileIds: number[],
   context: BuilderContext,
 ): Promise<{ ok: true; result: BuilderResult } | { ok: false; error: string }> {
-  await requireUser("/new");
-  if (!message.trim()) return { ok: false, error: "메시지를 입력해주세요." };
+  const user = await requireUser("/new");
+  if (!message.trim() && fileIds.length === 0) return { ok: false, error: "메시지를 입력하거나 파일을 첨부해주세요." };
+  if (fileIds.length > MAX_FILES_PER_TURN) return { ok: false, error: `한 번에 최대 ${MAX_FILES_PER_TURN}개까지 첨부할 수 있습니다.` };
   if (!STYLES.includes(context.style)) return { ok: false, error: "스타일을 선택해주세요." };
+
+  // Only this user's own files are ever loaded, whatever ids the client sends.
+  const turns = history.slice(-20).map((t) => ({
+    role: t.role,
+    content: t.content,
+    files: t.role === "user" ? getChatFiles(user.id, t.fileIds ?? []) : undefined,
+  }));
   try {
-    return { ok: true, result: await buildPrompt(history.slice(-20), message.trim(), context) };
+    const result = await buildPrompt(
+      turns,
+      message.trim() || DEFAULT_FILE_MESSAGE,
+      getChatFiles(user.id, fileIds),
+      context,
+    );
+    return { ok: true, result };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "알 수 없는 오류" };
   }

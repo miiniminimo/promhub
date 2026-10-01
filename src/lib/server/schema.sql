@@ -48,6 +48,26 @@ CREATE TABLE IF NOT EXISTS commits (
 );
 CREATE INDEX IF NOT EXISTS commits_repo ON commits(repo_id, id);
 
+-- Source images (inputs / references) attached to a repo: an uploaded image or an external link.
+CREATE TABLE IF NOT EXISTS repo_sources (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  repo_id    INTEGER NOT NULL REFERENCES repos(id) ON DELETE CASCADE,
+  src        TEXT NOT NULL,
+  link       TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS repo_sources_repo ON repo_sources(repo_id, sort_order);
+
+-- Files attached in the AI prompt-builder chat (images, text, PDFs).
+CREATE TABLE IF NOT EXISTS chat_files (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name       TEXT NOT NULL,
+  mime       TEXT NOT NULL,
+  data       BLOB NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
 -- Prompt test ("coding test" style) problems and graded submissions.
 CREATE TABLE IF NOT EXISTS challenges (
   slug        TEXT PRIMARY KEY,

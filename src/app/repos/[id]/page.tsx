@@ -8,7 +8,7 @@ import { StyleTag } from "@/components/StyleTag";
 import { VisibilityBadge } from "@/components/VisibilityBadge";
 import { VisibilityToggle } from "@/components/VisibilityToggle";
 import { getCurrentUser } from "@/lib/server/auth";
-import { getCommits, getRepo } from "@/lib/server/repos";
+import { getCommits, getRepo, getSources } from "@/lib/server/repos";
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleString("ko-KR", {
@@ -29,6 +29,7 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
 
   const isOwner = user?.id === repo.ownerId;
   const commits = getCommits(repo.id);
+  const sources = getSources(repo.id);
   const head = commits.length - 1;
   const requested = Number(v) - 1;
   const selected = Number.isInteger(requested) && requested >= 0 && requested <= head ? requested : head;
@@ -105,28 +106,54 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
           )}
         </section>
 
-        <aside>
-          <h2 className="label-mono border-b border-frame pb-3 text-secondary">History · {commits.length} commits</h2>
-          <ol className="mt-4 space-y-3 border-l border-purple-rule pl-4">
-            {commits
-              .map((commit, i) => ({ commit, i }))
-              .reverse()
-              .map(({ commit, i }) => (
-                <li key={commit.id}>
-                  <Link
-                    href={`/repos/${repo.id}?v=${i + 1}`}
-                    className={`block rounded-tile border px-4 py-3 transition-colors duration-150 ${
-                      i === selected && !editing ? "border-mint" : "border-frame hover:border-secondary"
-                    }`}
-                  >
-                    <p className="label-mono text-secondary">
-                      v{i + 1} · {commit.hash} · {formatTime(commit.createdAt)}
-                    </p>
-                    <p className="mt-1.5 text-[15px] font-bold">{commit.message}</p>
-                  </Link>
-                </li>
-              ))}
-          </ol>
+        <aside className="space-y-10">
+          {sources.length > 0 && (
+            <section>
+              <h2 className="label-mono border-b border-frame pb-3 text-secondary">Source images · {sources.length}</h2>
+              <ul className="mt-4 grid grid-cols-4 gap-3 lg:grid-cols-2">
+                {sources.map((s, i) => (
+                  <li key={s.src}>
+                    <a href={s.link ?? s.src} target="_blank" rel="noreferrer" className="group block">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- may be an arbitrary external host */}
+                      <img
+                        src={s.src}
+                        alt={`소스 이미지 ${i + 1}`}
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                        className="aspect-square w-full rounded-img border border-frame object-cover"
+                      />
+                      <span className="label-mono mt-1.5 block truncate font-normal text-secondary transition-colors duration-150 group-hover:text-link-hover">
+                        {s.link ? `↗ ${new URL(s.link).hostname}` : "업로드한 파일"}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <section>
+            <h2 className="label-mono border-b border-frame pb-3 text-secondary">History · {commits.length} commits</h2>
+            <ol className="mt-4 space-y-3 border-l border-purple-rule pl-4">
+              {commits
+                .map((commit, i) => ({ commit, i }))
+                .reverse()
+                .map(({ commit, i }) => (
+                  <li key={commit.id}>
+                    <Link
+                      href={`/repos/${repo.id}?v=${i + 1}`}
+                      className={`block rounded-tile border px-4 py-3 transition-colors duration-150 ${
+                        i === selected && !editing ? "border-mint" : "border-frame hover:border-secondary"
+                      }`}
+                    >
+                      <p className="label-mono text-secondary">
+                        v{i + 1} · {commit.hash} · {formatTime(commit.createdAt)}
+                      </p>
+                      <p className="mt-1.5 text-[15px] font-bold">{commit.message}</p>
+                    </Link>
+                  </li>
+                ))}
+            </ol>
+          </section>
         </aside>
       </div>
     </main>
