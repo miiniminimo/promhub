@@ -7,6 +7,7 @@ import { getPost } from "@/lib/posts";
 import { createSession, destroySession, getCurrentUser, hashPassword, requireUser, verifyPassword } from "@/lib/server/auth";
 import { getDb } from "@/lib/server/db";
 import { addCommit, createRepo, forkPost, forkRepo, getRepo, saveImage, setVisibility, slugify } from "@/lib/server/repos";
+import { buildPrompt, type BuilderContext, type BuilderResult, type BuilderTurn } from "@/lib/server/prompt-builder";
 import { saveSubmission } from "@/lib/server/submissions";
 import type { Style } from "@/lib/types";
 
@@ -158,4 +159,21 @@ export async function runTestAction(slug: string, prompt: string, submit: boolea
     revalidatePath("/me");
   }
   return { results, score, submitted: !!user };
+}
+
+// ---------- AI prompt builder ----------
+
+export async function chatPromptBuilder(
+  history: BuilderTurn[],
+  message: string,
+  context: BuilderContext,
+): Promise<{ ok: true; result: BuilderResult } | { ok: false; error: string }> {
+  await requireUser("/new");
+  if (!message.trim()) return { ok: false, error: "메시지를 입력해주세요." };
+  if (!STYLES.includes(context.style)) return { ok: false, error: "스타일을 선택해주세요." };
+  try {
+    return { ok: true, result: await buildPrompt(history.slice(-20), message.trim(), context) };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "알 수 없는 오류" };
+  }
 }
