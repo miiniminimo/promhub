@@ -1,6 +1,7 @@
 import "server-only";
 
 import { randomBytes } from "node:crypto";
+import { joinNegative } from "../prompt-format";
 import type { Post, PostImage, Style } from "../types";
 import { getDb } from "./db";
 
@@ -33,7 +34,6 @@ export type Commit = {
   hash: string;
   message: string;
   prompt: string;
-  negativePrompt: string | null;
   createdAt: string;
 };
 
@@ -106,7 +106,7 @@ export function getRepo(id: number, viewerId: number | null) {
 export function getCommits(repoId: number): Commit[] {
   return getDb()
     .prepare(
-      `SELECT id, hash, message, prompt, negative_prompt AS negativePrompt, created_at AS createdAt
+      `SELECT id, hash, message, prompt, created_at AS createdAt
        FROM commits WHERE repo_id = ? ORDER BY id`,
     )
     .all(repoId) as Commit[];
@@ -145,7 +145,6 @@ type NewRepo = {
   cover: PostImage | null;
   visibility: Visibility;
   prompt: string;
-  negativePrompt: string | null;
   message: string;
   sources?: RepoSource[];
   forkedPostId?: string;
@@ -175,8 +174,8 @@ export function createRepo(input: NewRepo): number {
       );
     const repoId = Number(lastInsertRowid);
     getDb().prepare(
-      "INSERT INTO commits (repo_id, hash, message, prompt, negative_prompt) VALUES (?, ?, ?, ?, ?)",
-    ).run(repoId, shortHash(), input.message, input.prompt, input.negativePrompt);
+      "INSERT INTO commits (repo_id, hash, message, prompt) VALUES (?, ?, ?, ?)",
+    ).run(repoId, shortHash(), input.message, input.prompt);
     const insertSource = getDb().prepare(
       "INSERT INTO repo_sources (repo_id, src, link, sort_order) VALUES (?, ?, ?, ?)",
     );
@@ -194,8 +193,7 @@ export function forkPost(ownerId: number, post: Post) {
     style: post.style,
     cover: post.images[0],
     visibility: "private",
-    prompt: post.prompt,
-    negativePrompt: post.negativePrompt,
+    prompt: joinNegative(post.prompt, post.negativePrompt),
     message: `Fork from @${post.author}`,
     forkedPostId: post.id,
     forkedLabel: `@${post.author} / ${post.title}`,
@@ -213,7 +211,6 @@ export function forkRepo(ownerId: number, source: RepoSummary) {
     cover: source.cover,
     visibility: "private",
     prompt: head.prompt,
-    negativePrompt: head.negativePrompt,
     message: `Fork from ${source.owner}/${source.name}@${head.hash}`,
     sources: getSources(source.id),
     forkedRepoId: source.id,
@@ -223,12 +220,12 @@ export function forkRepo(ownerId: number, source: RepoSummary) {
 
 export function addCommit(
   repoId: number,
-  change: { message: string; prompt: string; negativePrompt: string | null },
+  change: { message: string; prompt: string },
 ) {
   getDb().transaction(() => {
     getDb().prepare(
-      "INSERT INTO commits (repo_id, hash, message, prompt, negative_prompt) VALUES (?, ?, ?, ?, ?)",
-    ).run(repoId, shortHash(), change.message, change.prompt, change.negativePrompt);
+      "INSERT INTO commits (repo_id, hash, message, prompt) VALUES (?, ?, ?, ?)",
+    ).run(repoId, shortHash(), change.message, change.prompt);
     getDb().prepare("UPDATE repos SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(repoId);
   })();
 }

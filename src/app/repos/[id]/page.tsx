@@ -86,7 +86,7 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section>
           {editing ? (
-            <CommitForm repoId={repo.id} prompt={commits[head].prompt} negativePrompt={commits[head].negativePrompt} />
+            <CommitForm repoId={repo.id} prompt={commits[head].prompt} />
           ) : (
             <div className="space-y-4">
               <div className="flex min-h-9 items-center justify-between gap-4">
@@ -101,7 +101,6 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
                 )}
               </div>
               <PromptBlock label="Prompt" text={viewing.prompt} />
-              {viewing.negativePrompt && <PromptBlock label="Negative prompt" text={viewing.negativePrompt} />}
             </div>
           )}
         </section>

@@ -11,9 +11,18 @@ npm run dev
 
 http://localhost:3000 — 첫 실행 시 `data/promhub.db` (SQLite) 가 자동 생성됩니다.
 
-### AI 프롬프트 빌더 (선택)
+### AI 스타일 에이전트 (선택)
 
-New Prompt 의 프롬프트는 AI 와의 대화로 만들며, Claude API (`claude-opus-5-5`) 를 사용합니다.
+New Prompt 의 프롬프트는 선택한 스타일의 **AI 에이전트**와 대화로 만들며, Claude API (`claude-opus-5-5`) 를 사용합니다.
+
+| 에이전트 | 전문 | 기본 모델 |
+|---|---|---|
+| 애니 | 캐릭터·의상·포즈를 booru 태그로 정리 | Illustrious |
+| 실사 | 카메라·렌즈·조명·필름 질감 | Flux.1 D |
+| 일러스트 | 재료·기법·색감·선 | Flux.1 D |
+
+에이전트는 `search_promhub` 도구로 PromHub 의 비슷한 공개 프롬프트를 찾아 참고하고, 제목·사용 모델이 비어 있으면 채워 줍니다.
+프롬프트는 한 덩어리로 저장하며, Stable Diffusion 계열 모델이면 마지막 줄에 `Negative prompt: …` 를 붙입니다 (A1111 / Civitai 형식).
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...

@@ -96,13 +96,11 @@ async function ownedRepo(repoId: number) {
 export async function commitAction(repoId: number, _: FormState, formData: FormData): Promise<FormState> {
   await ownedRepo(repoId);
   const prompt = String(formData.get("prompt") ?? "").trim();
-  const negativePrompt = String(formData.get("negativePrompt") ?? "").trim();
   if (!prompt) return { error: "프롬프트를 입력해주세요." };
 
   addCommit(repoId, {
     message: String(formData.get("message") ?? "").trim() || "Update prompt",
     prompt,
-    negativePrompt: negativePrompt || null,
   });
   redirect(`/repos/${repoId}`);
 }
@@ -122,7 +120,6 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
   const model = String(formData.get("model") ?? "").trim();
   const style = String(formData.get("style")) as Style;
   const prompt = String(formData.get("prompt") ?? "").trim();
-  const negativePrompt = String(formData.get("negativePrompt") ?? "").trim();
   const visibility = formData.get("visibility") === "private" ? "private" : "public";
   if (!title || !model) return { error: "제목과 사용 모델은 필수입니다." };
   if (!prompt) return { error: "AI와 대화해서 프롬프트를 먼저 만들어주세요." };
@@ -153,7 +150,6 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
     cover,
     visibility,
     prompt,
-    negativePrompt: negativePrompt || null,
     message: "Initial commit",
     sources,
   });
