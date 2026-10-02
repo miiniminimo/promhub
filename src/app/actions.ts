@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getChallenge, grade, scoreOf, type TestResult } from "@/lib/challenges";
+import { SAFE_IMAGE_TYPES } from "@/lib/image-types";
 import { getPost } from "@/lib/posts";
 import { createSession, destroySession, getCurrentUser, hashPassword, requireUser, verifyPassword } from "@/lib/server/auth";
 import { getDb } from "@/lib/server/db";
@@ -130,7 +131,7 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
   let cover = null;
   const file = formData.get("image");
   if (file instanceof File && file.size > 0) {
-    if (!file.type.startsWith("image/")) return { error: "이미지 파일만 올릴 수 있습니다." };
+    if (!SAFE_IMAGE_TYPES.includes(file.type)) return { error: "JPG·PNG·GIF·WEBP 이미지만 올릴 수 있습니다." };
     if (file.size > MAX_IMAGE_BYTES) return { error: "이미지는 5MB 이하만 올릴 수 있습니다." };
     const imageId = saveImage(user.id, file.type, Buffer.from(await file.arrayBuffer()));
     cover = {
@@ -191,7 +192,7 @@ export async function uploadSourceImageAction(
   const user = await requireUser("/new");
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "파일을 선택해주세요." };
-  if (!file.type.startsWith("image/")) return { ok: false, error: "이미지 파일만 올릴 수 있습니다." };
+  if (!SAFE_IMAGE_TYPES.includes(file.type)) return { ok: false, error: "JPG·PNG·GIF·WEBP 이미지만 올릴 수 있습니다." };
   if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "이미지는 5MB 이하만 올릴 수 있습니다." };
   const id = saveImage(user.id, file.type, Buffer.from(await file.arrayBuffer()));
   return { ok: true, src: `/api/images/${id}` };
@@ -220,7 +221,6 @@ export async function runTestAction(slug: string, prompt: string, submit: boolea
 
 export type ChatFileInfo = { id: number; name: string; mime: string };
 
-const CHAT_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const CHAT_TEXT_EXT = /\.(txt|md|markdown|json|csv|log|html?)$/i;
 const MAX_CHAT_FILE_BYTES = 10 * 1024 * 1024;
 
@@ -234,7 +234,7 @@ export async function uploadChatFileAction(
   if (file.size > MAX_CHAT_FILE_BYTES) return { ok: false, error: `${file.name}: 10MB 이하만 올릴 수 있습니다.` };
 
   let mime = file.type;
-  if (CHAT_IMAGE_TYPES.includes(mime) || mime === "application/pdf") {
+  if (SAFE_IMAGE_TYPES.includes(mime) || mime === "application/pdf") {
     // supported as-is
   } else if (mime.startsWith("text/") || CHAT_TEXT_EXT.test(file.name)) {
     mime = "text/plain";
