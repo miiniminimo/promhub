@@ -3,7 +3,9 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { betaTool } from "@anthropic-ai/sdk/helpers/beta/json-schema";
 import { AGENTS } from "../agents";
+import { SAFE_IMAGE_TYPES } from "../image-types";
 import { joinNegative, usesNegativePrompt } from "../prompt-format";
+import { styleOf } from "../styles";
 import type { Style } from "../types";
 import type { ChatFile } from "./repos";
 import { popularInStyle, searchPromHub } from "./search";
@@ -78,22 +80,18 @@ const AGENT_SYSTEM: Record<Style, string> = {
 - Default model if the user has none: ${AGENTS.illustration.defaultModel}.`,
 };
 
+const str = { type: "string" };
 const OUTPUT_SCHEMA = {
   type: "object",
   properties: {
-    reply: { type: "string" },
-    prompt: { type: "string" },
+    reply: str,
+    prompt: str,
     ready: { type: "boolean" },
-    title: { type: "string" },
-    model: { type: "string" },
+    title: str,
+    model: str,
     references: {
       type: "array",
-      items: {
-        type: "object",
-        properties: { title: { type: "string" }, url: { type: "string" } },
-        required: ["title", "url"],
-        additionalProperties: false,
-      },
+      items: { type: "object", properties: { title: str, url: str }, required: ["title", "url"], additionalProperties: false },
     },
   },
   required: ["reply", "prompt", "ready", "title", "model", "references"],
@@ -102,23 +100,33 @@ const OUTPUT_SCHEMA = {
 
 type AgentOutput = Omit<BuilderResult, "agent" | "raw" | "mode">;
 
-const STYLE_LABEL: Record<Style, string> = { anime: "애니", photo: "실사", illustration: "일러스트" };
+const REFUSED: AgentOutput = {
+  reply: "이 요청은 도와드리기 어려워요. 다른 방향으로 설명해 주시겠어요?",
+  prompt: "",
+  ready: false,
+  title: "",
+  model: "",
+  references: [],
+};
 
-function contextLine({ model, style }: BuilderContext) {
-  return `[대상 모델: ${model || "미정"} / 스타일: ${STYLE_LABEL[style]}]`;
-}
+const result = (output: AgentOutput, ctx: BuilderContext, mode: BuilderResult["mode"]): BuilderResult => ({
+  ...output,
+  agent: ctx.style,
+  raw: JSON.stringify(output),
+  mode,
+});
+
+const contextLine = ({ model, style }: BuilderContext) => `[대상 모델: ${model || "미정"} / 스타일: ${styleOf(style).label}]`;
+
+const isImage = (file: ChatFile) => SAFE_IMAGE_TYPES.includes(file.mime);
 
 // ---------- Content blocks ----------
 
-const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
-type ImageType = (typeof IMAGE_TYPES)[number];
+type ImageType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
 
 function toContentBlock(file: ChatFile): Anthropic.Beta.BetaContentBlockParam {
-  if ((IMAGE_TYPES as readonly string[]).includes(file.mime)) {
-    return {
-      type: "image",
-      source: { type: "base64", media_type: file.mime as ImageType, data: file.data.toString("base64") },
-    };
+  if (isImage(file)) {
+    return { type: "image", source: { type: "base64", media_type: file.mime as ImageType, data: file.data.toString("base64") } };
   }
   if (file.mime === "application/pdf") {
     return {
@@ -201,23 +209,13 @@ export async function buildPrompt(
       fallbacks: "default",
     });
 
-    if (response.stop_reason === "refusal") {
-      const refused: AgentOutput = {
-        reply: "이 요청은 도와드리기 어려워요. 다른 방향으로 설명해 주시겠어요?",
-        prompt: "",
-        ready: false,
-        title: "",
-        model: "",
-        references: [],
-      };
-      return { ...refused, agent: ctx.style, raw: JSON.stringify(refused), mode: "ai" };
-    }
+    if (response.stop_reason === "refusal") return result(REFUSED, ctx, "ai");
 
     const text = response.content.find((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")?.text ?? "";
     const parsed = JSON.parse(text) as AgentOutput;
     // Only keep links that point inside PromHub.
     parsed.references = parsed.references.filter((r) => /^\/(p|repos)\/[\w-]+$/.test(r.url));
-    return { ...parsed, agent: ctx.style, raw: text, mode: "ai" };
+    return { ...result(parsed, ctx, "ai"), raw: text };
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError || !(error instanceof Anthropic.APIError)) {
       // Missing/invalid credentials (or credential resolution failed): fall back to demo mode.
@@ -268,7 +266,7 @@ const DEMO: Record<Style, { tags: string; negative: string; questions: string[] 
 
 /** Demo stand-in for reading an attachment: image → style note, text → its longest line. */
 function demoFromFile(file: ChatFile) {
-  if ((IMAGE_TYPES as readonly string[]).includes(file.mime)) return `in the visual style of the reference image "${file.name}"`;
+  if (isImage(file)) return `in the visual style of the reference image "${file.name}"`;
   if (file.mime === "application/pdf") return `based on "${file.name}"`;
   const longest = file.data
     .toString("utf8")
@@ -297,13 +295,16 @@ function demoBuild(history: BuilderTurn[], message: string, files: ChatFile[], c
   }));
 
   const body = `${details.join(", ")}, ${demo.tags}`;
-  const output: AgentOutput = {
-    reply: `[데모 모드 · ${agent.name}] ${demo.questions[Math.min(turn, demo.questions.length - 1)]}`,
-    prompt: usesNegativePrompt(model) ? joinNegative(body, demo.negative) : body,
-    ready: turn >= 2,
-    title: (details[0] ?? "").slice(0, 40),
-    model,
-    references,
-  };
-  return { ...output, agent: ctx.style, raw: JSON.stringify(output), mode: "demo" };
+  return result(
+    {
+      reply: `[데모 모드 · ${agent.name}] ${demo.questions[Math.min(turn, demo.questions.length - 1)]}`,
+      prompt: usesNegativePrompt(model) ? joinNegative(body, demo.negative) : body,
+      ready: turn >= 2,
+      title: (details[0] ?? "").slice(0, 40),
+      model,
+      references,
+    },
+    ctx,
+    "demo",
+  );
 }
