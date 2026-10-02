@@ -93,7 +93,9 @@ async function ownedRepo(repoId: number) {
   return repo;
 }
 
-export async function commitAction(repoId: number, _: FormState, formData: FormData): Promise<FormState> {
+export async function commitAction(_: FormState, formData: FormData): Promise<FormState> {
+  const repoId = Number(formData.get("repoId"));
+  if (!Number.isInteger(repoId)) return { error: "잘못된 요청입니다." };
   await ownedRepo(repoId);
   const prompt = String(formData.get("prompt") ?? "").trim();
   if (!prompt) return { error: "프롬프트를 입력해주세요." };
