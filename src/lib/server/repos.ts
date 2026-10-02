@@ -3,7 +3,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { joinNegative } from "../prompt-format";
 import type { Post, PostImage, Style } from "../types";
-import { getDb } from "./db";
+import { getDb, sql } from "./db";
 
 export type Visibility = "public" | "private";
 
@@ -97,15 +97,14 @@ export function slugify(text: string) {
 
 /** Repo visible to `viewerId` (private repos only to their owner). */
 export function getRepo(id: number, viewerId: number | null) {
-  const row = getDb().prepare(`${SELECT_REPO} WHERE r.id = ?`).get(id) as RepoRow | undefined;
+  const row = sql(`${SELECT_REPO} WHERE r.id = ?`).get(id) as RepoRow | undefined;
   if (!row) return null;
   if (row.visibility === "private" && row.owner_id !== viewerId) return null;
   return toSummary(row);
 }
 
 export function getCommits(repoId: number): Commit[] {
-  return getDb()
-    .prepare(
+  return sql(
       `SELECT id, hash, message, prompt, created_at AS createdAt
        FROM commits WHERE repo_id = ? ORDER BY id`,
     )
@@ -113,22 +112,20 @@ export function getCommits(repoId: number): Commit[] {
 }
 
 export function getSources(repoId: number): RepoSource[] {
-  return getDb()
-    .prepare("SELECT src, link FROM repo_sources WHERE repo_id = ? ORDER BY sort_order")
+  return sql("SELECT src, link FROM repo_sources WHERE repo_id = ? ORDER BY sort_order")
     .all(repoId) as RepoSource[];
 }
 
 export function listUserRepos(ownerId: number) {
   return (
-    getDb().prepare(`${SELECT_REPO} WHERE r.owner_id = ? ORDER BY r.updated_at DESC`).all(ownerId) as RepoRow[]
+    sql(`${SELECT_REPO} WHERE r.owner_id = ? ORDER BY r.updated_at DESC`).all(ownerId) as RepoRow[]
   ).map(toSummary);
 }
 
 /** Public original prompts (not forks) for the explore feed. */
 export function listPublicOriginals() {
   return (
-    getDb()
-      .prepare(
+    sql(
         `${SELECT_REPO} WHERE r.visibility = 'public' AND r.forked_post_id IS NULL AND r.forked_repo_id IS NULL
          ORDER BY r.created_at DESC`,
       )
@@ -154,8 +151,7 @@ type NewRepo = {
 
 export function createRepo(input: NewRepo): number {
   return getDb().transaction(() => {
-    const { lastInsertRowid } = getDb()
-      .prepare(
+    const { lastInsertRowid } = sql(
         `INSERT INTO repos (owner_id, name, description, model, style, cover_json, visibility,
            forked_post_id, forked_repo_id, forked_label)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -173,10 +169,10 @@ export function createRepo(input: NewRepo): number {
         input.forkedLabel ?? null,
       );
     const repoId = Number(lastInsertRowid);
-    getDb().prepare(
+    sql(
       "INSERT INTO commits (repo_id, hash, message, prompt) VALUES (?, ?, ?, ?)",
     ).run(repoId, shortHash(), input.message, input.prompt);
-    const insertSource = getDb().prepare(
+    const insertSource = sql(
       "INSERT INTO repo_sources (repo_id, src, link, sort_order) VALUES (?, ?, ?, ?)",
     );
     input.sources?.forEach((s, i) => insertSource.run(repoId, s.src, s.link, i));
@@ -223,32 +219,31 @@ export function addCommit(
   change: { message: string; prompt: string },
 ) {
   getDb().transaction(() => {
-    getDb().prepare(
+    sql(
       "INSERT INTO commits (repo_id, hash, message, prompt) VALUES (?, ?, ?, ?)",
     ).run(repoId, shortHash(), change.message, change.prompt);
-    getDb().prepare("UPDATE repos SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(repoId);
+    sql("UPDATE repos SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(repoId);
   })();
 }
 
 export function setVisibility(repoId: number, visibility: Visibility) {
-  getDb().prepare("UPDATE repos SET visibility = ? WHERE id = ?").run(visibility, repoId);
+  sql("UPDATE repos SET visibility = ? WHERE id = ?").run(visibility, repoId);
 }
 
 export function saveImage(ownerId: number, mime: string, data: Buffer) {
-  const { lastInsertRowid } = getDb()
-    .prepare("INSERT INTO images (owner_id, mime, data) VALUES (?, ?, ?)")
+  const { lastInsertRowid } = sql("INSERT INTO images (owner_id, mime, data) VALUES (?, ?, ?)")
     .run(ownerId, mime, data);
   return Number(lastInsertRowid);
 }
 
 export function getImage(id: number) {
-  return getDb().prepare("SELECT mime, data FROM images WHERE id = ?").get(id) as
+  return sql("SELECT mime, data FROM images WHERE id = ?").get(id) as
     | { mime: string; data: Buffer }
     | undefined;
 }
 
 export function imageOwner(id: number) {
-  const row = getDb().prepare("SELECT owner_id FROM images WHERE id = ?").get(id) as { owner_id: number } | undefined;
+  const row = sql("SELECT owner_id FROM images WHERE id = ?").get(id) as { owner_id: number } | undefined;
   return row?.owner_id ?? null;
 }
 
@@ -257,8 +252,7 @@ export function imageOwner(id: number) {
 export type ChatFile = { id: number; name: string; mime: string; data: Buffer };
 
 export function saveChatFile(ownerId: number, name: string, mime: string, data: Buffer) {
-  const { lastInsertRowid } = getDb()
-    .prepare("INSERT INTO chat_files (owner_id, name, mime, data) VALUES (?, ?, ?, ?)")
+  const { lastInsertRowid } = sql("INSERT INTO chat_files (owner_id, name, mime, data) VALUES (?, ?, ?, ?)")
     .run(ownerId, name, mime, data);
   return Number(lastInsertRowid);
 }
@@ -266,8 +260,7 @@ export function saveChatFile(ownerId: number, name: string, mime: string, data: 
 /** The requested chat files that belong to `ownerId`, in the requested order. */
 export function getChatFiles(ownerId: number, ids: number[]): ChatFile[] {
   if (ids.length === 0) return [];
-  const rows = getDb()
-    .prepare(
+  const rows = sql(
       `SELECT id, name, mime, data FROM chat_files WHERE owner_id = ? AND id IN (${ids.map(() => "?").join(",")})`,
     )
     .all(ownerId, ...ids) as ChatFile[];

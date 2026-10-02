@@ -34,5 +34,6 @@ export type FeedItem = {
   style: Style;
   cover: PostImage | null;
   likes: number | null;
-  excerpt: string;
+  /** Prompt preview, only for cards without a cover image (they show the prompt instead). */
+  excerpt: string | null;
 };

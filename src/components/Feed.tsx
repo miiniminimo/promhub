@@ -30,8 +30,8 @@ export function Feed({ items }: { items: FeedItem[] }) {
       </div>
 
       <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
-        {visible.map((item) => (
-          <FeedCard key={item.key} item={item} />
+        {visible.map((item, i) => (
+          <FeedCard key={item.key} item={item} eager={i === 0} />
         ))}
       </div>
     </>

@@ -3,6 +3,10 @@ import { Feed } from "@/components/Feed";
 import { POSTS } from "@/lib/posts";
 import { listPublicOriginals } from "@/lib/server/repos";
 import type { FeedItem } from "@/lib/types";
+import { PageHeading } from "@/components/PageHeading";
+
+// Enough for the card's 6-line clamp; the rest of the prompt never reaches the client.
+const EXCERPT_CHARS = 280;
 
 export default async function Home() {
   // better-sqlite3 is synchronous; skip prerendering so the query runs per request.
@@ -15,7 +19,7 @@ export default async function Home() {
     style: r.style,
     cover: r.cover,
     likes: null,
-    excerpt: r.headPrompt,
+    excerpt: r.cover ? null : r.headPrompt.slice(0, EXCERPT_CHARS),
   }));
   const civitai: FeedItem[] = POSTS.map((p) => ({
     key: `post-${p.id}`,
@@ -25,18 +29,13 @@ export default async function Home() {
     style: p.style,
     cover: p.images[0],
     likes: p.likes,
-    excerpt: p.prompt,
+    excerpt: null,
   }));
 
   return (
     <main className="mx-auto w-full max-w-[1300px] px-6 lg:px-12">
       <section className="py-12 lg:py-16">
-        <p className="text-[19px] font-light uppercase leading-[1.2] tracking-[1.9px] text-secondary">
-          Version control for your prompts
-        </p>
-        <h1 className="mt-4 font-display text-[54px] uppercase leading-[0.95] tracking-[1.07px] sm:text-[90px] lg:text-[107px]">
-          Prompts that ship.
-        </h1>
+        <PageHeading eyebrow="Version control for your prompts" title="Prompts that ship." size="hero" />
       </section>
       <Feed items={[...userPrompts, ...civitai]} />
     </main>

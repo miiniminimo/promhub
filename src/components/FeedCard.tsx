@@ -4,7 +4,7 @@ import { styleOf } from "@/lib/styles";
 import type { FeedItem } from "@/lib/types";
 import { StyleTag } from "./StyleTag";
 
-export function FeedCard({ item }: { item: FeedItem }) {
+export function FeedCard({ item, eager = false }: { item: FeedItem; eager?: boolean }) {
   return (
     <Link
       href={item.href}
@@ -16,7 +16,8 @@ export function FeedCard({ item }: { item: FeedItem }) {
           alt={item.title}
           width={item.cover.width}
           height={item.cover.height}
-          loading="lazy"
+          loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : "auto"}
           className="h-auto w-full rounded-[14px]"
         />
       ) : (

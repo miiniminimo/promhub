@@ -1,12 +1,12 @@
 import "server-only";
 
 import { CHALLENGES } from "../challenges";
-import { getDb } from "./db";
+import { sql } from "./db";
 
 export type ChallengeStatus = { slug: string; bestScore: number | null; attempts: number };
 
 export function saveSubmission(userId: number, slug: string, prompt: string, score: number) {
-  getDb().prepare("INSERT INTO submissions (user_id, challenge_slug, prompt, score) VALUES (?, ?, ?, ?)").run(
+  sql("INSERT INTO submissions (user_id, challenge_slug, prompt, score) VALUES (?, ?, ?, ?)").run(
     userId,
     slug,
     prompt,
@@ -16,8 +16,7 @@ export function saveSubmission(userId: number, slug: string, prompt: string, sco
 
 export function challengeStatuses(userId: number | null): Map<string, ChallengeStatus> {
   const rows = userId
-    ? (getDb()
-        .prepare(
+    ? (sql(
           `SELECT challenge_slug AS slug, MAX(score) AS bestScore, COUNT(*) AS attempts
            FROM submissions WHERE user_id = ? GROUP BY challenge_slug`,
         )
@@ -27,8 +26,7 @@ export function challengeStatuses(userId: number | null): Map<string, ChallengeS
 }
 
 export function lastSubmission(userId: number, slug: string) {
-  return getDb()
-    .prepare(
+  return sql(
       "SELECT prompt, score FROM submissions WHERE user_id = ? AND challenge_slug = ? ORDER BY id DESC LIMIT 1",
     )
     .get(userId, slug) as { prompt: string; score: number } | undefined;
@@ -45,8 +43,7 @@ export type ChallengeStats = { solvers: number; submissions: number; correct: nu
 
 /** Per-challenge totals across all users: who solved it (100점) and the share of correct submissions. */
 export function challengeStats(): Map<string, ChallengeStats> {
-  const rows = getDb()
-    .prepare(
+  const rows = sql(
       `SELECT challenge_slug AS slug,
               COUNT(DISTINCT CASE WHEN score = 100 THEN user_id END) AS solvers,
               COUNT(*) AS submissions,

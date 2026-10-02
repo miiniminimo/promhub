@@ -27,11 +27,10 @@
 }
 
 @theme inline {
-  /* Substitutes: Manuka → Anton, PolySans → Space Grotesk, PolySans Mono → Space Mono, FK Roman → Newsreader. Noto Sans KR covers Hangul. */
+  /* Substitutes: Manuka → Anton, PolySans → Space Grotesk, PolySans Mono → Space Mono. Noto Sans KR covers Hangul. */
   --font-display: var(--font-anton), var(--font-noto-kr), Impact, Helvetica, sans-serif;
   --font-sans: var(--font-space-grotesk), var(--font-noto-kr), Helvetica, Arial, sans-serif;
   --font-mono: var(--font-space-mono), var(--font-noto-kr), "Courier New", monospace;
-  --font-serif: var(--font-newsreader), var(--font-noto-kr), Georgia, serif;
 }
 
 @layer base {
@@ -74,6 +73,20 @@
     background: rgba(255, 255, 255, 0.2);
     box-shadow: 0 0 0 1px #c2c2c2;
     color: #fff;
+  }
+
+  /* Dark slate secondary pill (DESIGN.md "Secondary — Dark Slate Pill"). */
+  .btn-slate {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    line-height: 2;
+    padding: 8px 20px;
+    border-radius: 24px;
+    background: var(--color-slate);
+    color: var(--color-muted);
   }
 
   .link-hover {

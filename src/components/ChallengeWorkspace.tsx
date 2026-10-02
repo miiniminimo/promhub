@@ -161,7 +161,7 @@ export function ChallengeWorkspace({ slug, title, category, level, description, 
 
       {/* Bottom bar */}
       <div className="flex h-14 shrink-0 items-center gap-2 border-t border-frame px-5">
-        <Link href="/tests" className="label-mono rounded-[24px] bg-slate px-4 py-2 leading-[2] text-muted">
+        <Link href="/tests" className="btn-slate px-4">
           문제 목록
         </Link>
         <div className="ml-auto flex gap-2">
@@ -170,14 +170,14 @@ export function ChallengeWorkspace({ slug, title, category, level, description, 
               setPrompt("");
               setRun(null);
             }}
-            className="label-mono rounded-[24px] bg-slate px-4 py-2 leading-[2] text-muted"
+            className="btn-slate px-4"
           >
             초기화
           </button>
           <button
             onClick={() => execute(false)}
             disabled={pending || !prompt.trim()}
-            className="label-mono rounded-[24px] bg-slate px-4 py-2 leading-[2] text-muted disabled:opacity-40"
+            className="btn-slate px-4 disabled:opacity-40"
           >
             테스트 실행
           </button>
@@ -201,7 +201,7 @@ export function ChallengeWorkspace({ slug, title, category, level, description, 
             <div className="mt-6 flex justify-center gap-2">
               <button
                 onClick={() => setShowPass(false)}
-                className="label-mono rounded-[24px] bg-slate px-5 py-2 leading-[2] text-muted"
+                className="btn-slate"
               >
                 닫기
               </button>

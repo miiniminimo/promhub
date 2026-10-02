@@ -37,7 +37,7 @@ export function CommitForm({ repoId, prompt: initialPrompt }: Props) {
         <button type="submit" disabled={unchanged || pending} className="btn-mint disabled:opacity-40">
           커밋
         </button>
-        <Link href={`/repos/${repoId}`} className="label-mono rounded-[24px] bg-slate px-5 py-2 leading-[2] text-muted">
+        <Link href={`/repos/${repoId}`} className="btn-slate">
           취소
         </Link>
       </div>
