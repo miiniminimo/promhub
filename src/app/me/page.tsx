@@ -6,6 +6,7 @@ import { VisibilityToggle } from "@/components/VisibilityToggle";
 import { requireUser } from "@/lib/server/auth";
 import { listUserRepos, type RepoSummary } from "@/lib/server/repos";
 import { testSummary } from "@/lib/server/submissions";
+import { PageHeading } from "@/components/PageHeading";
 
 const TABS = [
   { value: "original", label: "내가 오픈한 프롬프트" },
@@ -27,13 +28,10 @@ export default async function MyPage(props: PageProps<"/me">) {
     <main className="mx-auto w-full max-w-[1300px] px-6 py-12 lg:px-12">
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div>
-          <p className="text-[19px] font-light uppercase tracking-[1.9px] text-secondary">My page</p>
-          <h1 className="mt-3 break-all font-display text-[54px] uppercase leading-[0.95] tracking-[1.07px] sm:text-[90px]">
-            @{user.username}
-          </h1>
+          <PageHeading eyebrow="My page" title={`@${user.username}`} className="break-all" />
         </div>
         <form action={logout}>
-          <button className="label-mono rounded-[24px] bg-slate px-5 py-2 leading-[2] text-muted">Log out</button>
+          <button className="btn-slate">Log out</button>
         </form>
       </div>
 

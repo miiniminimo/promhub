@@ -3,6 +3,7 @@ import { type TestFilterValues, TestFilters } from "@/components/TestFilters";
 import { CATEGORIES, CHALLENGES } from "@/lib/challenges";
 import { getCurrentUser } from "@/lib/server/auth";
 import { challengeStats, challengeStatuses, testSummary } from "@/lib/server/submissions";
+import { PageHeading } from "@/components/PageHeading";
 
 const str = (v: string | string[] | undefined) => (typeof v === "string" ? v : "");
 
@@ -44,10 +45,7 @@ export default async function TestsPage(props: PageProps<"/tests">) {
 
   return (
     <main className="mx-auto w-full max-w-[1300px] px-6 py-12 lg:px-12">
-      <p className="text-[19px] font-light uppercase tracking-[1.9px] text-secondary">Practice prompt engineering</p>
-      <h1 className="mt-3 font-display text-[54px] uppercase leading-[0.95] tracking-[1.07px] sm:text-[90px]">
-        Prompt Test
-      </h1>
+      <PageHeading eyebrow="Practice prompt engineering" title="Prompt Test" />
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
         <section>

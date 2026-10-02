@@ -13,40 +13,43 @@ function tokens(text: string) {
     .filter((t) => t.length >= 2);
 }
 
+const toHit = (h: SearchHit) => ({ ...h, words: new Set(tokens(`${h.title} ${h.prompt}`)) });
+
+// The Civitai snapshot never changes at runtime, so its tokens are computed once.
+const POST_INDEX = POSTS.map((p) =>
+  toHit({ title: p.title, author: p.author, model: p.model, style: p.style, url: `/p/${p.id}`, prompt: p.prompt }),
+);
+
 /** Keyword search over public prompts: Civitai snapshot + users' public original repos. */
 export function searchPromHub(query: string, style: Style | null, limit = 5): SearchHit[] {
-  const terms = new Set(tokens(query));
-  if (terms.size === 0) return [];
+  const terms = tokens(query);
+  if (terms.length === 0) return [];
 
-  const candidates: SearchHit[] = [
-    ...listPublicOriginals().map((r) => ({
+  const repoIndex = listPublicOriginals().map((r) =>
+    toHit({
       title: r.description,
       author: r.owner,
       model: r.model,
       style: r.style,
       url: `/repos/${r.id}`,
       prompt: r.headPrompt,
-    })),
-    ...POSTS.map((p) => ({
-      title: p.title,
-      author: p.author,
-      model: p.model,
-      style: p.style,
-      url: `/p/${p.id}`,
-      prompt: p.prompt,
-    })),
-  ];
+    }),
+  );
 
-  return candidates
+  return [...repoIndex, ...POST_INDEX]
     .filter((c) => !style || c.style === style)
-    .map((c) => {
-      const words = tokens(`${c.title} ${c.prompt}`);
-      return { c, score: words.filter((w) => terms.has(w)).length };
-    })
+    .map((c) => ({ c, score: terms.filter((t) => c.words.has(t)).length }))
     .filter((x) => x.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
-    .map(({ c }) => ({ ...c, prompt: c.prompt.slice(0, 400) }));
+    .map(({ c }) => ({
+      title: c.title,
+      author: c.author,
+      model: c.model,
+      style: c.style,
+      url: c.url,
+      prompt: c.prompt.slice(0, 400),
+    }));
 }
 
 /** Most-liked Civitai posts in a style — a fallback when keyword search finds nothing. */

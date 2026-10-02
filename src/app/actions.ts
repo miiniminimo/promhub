@@ -7,7 +7,7 @@ import { SAFE_IMAGE_TYPES } from "@/lib/image-types";
 import { getPost } from "@/lib/posts";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { createSession, destroySession, getCurrentUser, hashPassword, requireUser, verifyPassword } from "@/lib/server/auth";
-import { getDb } from "@/lib/server/db";
+import { sql } from "@/lib/server/db";
 import {
   addCommit,
   createRepo,
@@ -40,11 +40,10 @@ export async function signup(_: FormState, formData: FormData): Promise<FormStat
   if (password.length < 6) return { error: "비밀번호는 6자 이상이어야 합니다.", username };
   if (password !== formData.get("passwordConfirm")) return { error: "비밀번호가 일치하지 않습니다.", username };
 
-  const exists = getDb().prepare("SELECT 1 FROM users WHERE username = ?").get(username);
+  const exists = sql("SELECT 1 FROM users WHERE username = ?").get(username);
   if (exists) return { error: "이미 사용 중인 아이디입니다.", username };
 
-  const { lastInsertRowid } = getDb()
-    .prepare("INSERT INTO users (username, password_hash) VALUES (?, ?)")
+  const { lastInsertRowid } = sql("INSERT INTO users (username, password_hash) VALUES (?, ?)")
     .run(username, hashPassword(password));
   await createSession(Number(lastInsertRowid));
   redirect(safeNextPath(formData.get("next")));
@@ -53,7 +52,7 @@ export async function signup(_: FormState, formData: FormData): Promise<FormStat
 export async function login(_: FormState, formData: FormData): Promise<FormState> {
   const username = String(formData.get("username") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const user = getDb().prepare("SELECT id, password_hash FROM users WHERE username = ?").get(username) as
+  const user = sql("SELECT id, password_hash FROM users WHERE username = ?").get(username) as
     | { id: number; password_hash: string }
     | undefined;
   if (!user || !verifyPassword(password, user.password_hash)) {
