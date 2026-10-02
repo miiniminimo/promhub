@@ -40,3 +40,19 @@ export function testSummary(userId: number) {
   const next = CHALLENGES.find((c) => statuses.get(c.slug)?.bestScore !== 100) ?? null;
   return { total: CHALLENGES.length, solved: solved.length, next };
 }
+
+export type ChallengeStats = { solvers: number; submissions: number; correct: number };
+
+/** Per-challenge totals across all users: who solved it (100점) and the share of correct submissions. */
+export function challengeStats(): Map<string, ChallengeStats> {
+  const rows = getDb()
+    .prepare(
+      `SELECT challenge_slug AS slug,
+              COUNT(DISTINCT CASE WHEN score = 100 THEN user_id END) AS solvers,
+              COUNT(*) AS submissions,
+              SUM(score = 100) AS correct
+       FROM submissions GROUP BY challenge_slug`,
+    )
+    .all() as (ChallengeStats & { slug: string })[];
+  return new Map(rows.map(({ slug, ...stats }) => [slug, stats]));
+}
