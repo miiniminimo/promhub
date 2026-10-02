@@ -14,6 +14,7 @@ import {
   forkPost,
   forkRepo,
   getChatFiles,
+  getCommits,
   getRepo,
   imageOwner,
   type RepoSource,
@@ -90,12 +91,18 @@ async function ownedRepo(repoId: number) {
   return repo;
 }
 
+/** Form submissions send CRLF line breaks; store prompts with plain LF so versions compare cleanly. */
+const normalizePrompt = (value: FormDataEntryValue | null) => String(value ?? "").replace(/\r\n?/g, "\n").trim();
+
 export async function commitAction(_: FormState, formData: FormData): Promise<FormState> {
   const repoId = Number(formData.get("repoId"));
   if (!Number.isInteger(repoId)) return { error: "잘못된 요청입니다." };
   await ownedRepo(repoId);
-  const prompt = String(formData.get("prompt") ?? "").trim();
+  const prompt = normalizePrompt(formData.get("prompt"));
   if (!prompt) return { error: "프롬프트를 입력해주세요." };
+  if (prompt === getCommits(repoId).at(-1)?.prompt.replace(/\r\n?/g, "\n").trim()) {
+    return { error: "이전 버전과 달라진 내용이 없습니다." };
+  }
 
   addCommit(repoId, {
     message: String(formData.get("message") ?? "").trim() || "Update prompt",
@@ -118,7 +125,7 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
   const title = String(formData.get("title") ?? "").trim();
   const model = String(formData.get("model") ?? "").trim();
   const style = String(formData.get("style")) as Style;
-  const prompt = String(formData.get("prompt") ?? "").trim();
+  const prompt = normalizePrompt(formData.get("prompt"));
   const visibility = formData.get("visibility") === "private" ? "private" : "public";
   if (!title || !model) return { error: "제목과 사용 모델은 필수입니다." };
   if (!prompt) return { error: "AI와 대화해서 프롬프트를 먼저 만들어주세요." };
