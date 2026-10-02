@@ -8,12 +8,16 @@ import { fieldClass, monoFieldClass } from "./ui";
 type Props = { repoId: number; prompt: string };
 
 export function CommitForm({ repoId, prompt: initialPrompt }: Props) {
-  const [state, action, pending] = useActionState(commitAction.bind(null, repoId), undefined);
+  // Pass the repo id as a form field rather than binding it on the client: a client-bound
+  // action re-rendered after a no-JS (MPA) submission sent React's server renderer into an
+  // endless retry loop (QA finding).
+  const [state, action, pending] = useActionState(commitAction, undefined);
   const [prompt, setPrompt] = useState(initialPrompt);
   const unchanged = prompt.trim() === initialPrompt.trim();
 
   return (
     <form action={action} className="space-y-4">
+      <input type="hidden" name="repoId" value={repoId} />
       <label className="block">
         <span className="label-mono text-secondary">Prompt</span>
         <textarea

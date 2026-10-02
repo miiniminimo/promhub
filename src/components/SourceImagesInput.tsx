@@ -95,7 +95,7 @@ export function SourceImagesInput() {
           {uploading ? "업로드 중…" : "파일 올리기"}
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/gif,image/webp"
             multiple
             className="sr-only"
             disabled={full || uploading}

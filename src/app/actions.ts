@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getChallenge, grade, scoreOf, type TestResult } from "@/lib/challenges";
+import { SAFE_IMAGE_TYPES } from "@/lib/image-types";
 import { getPost } from "@/lib/posts";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { createSession, destroySession, getCurrentUser, hashPassword, requireUser, verifyPassword } from "@/lib/server/auth";
 import { getDb } from "@/lib/server/db";
 import {
@@ -12,6 +14,7 @@ import {
   forkPost,
   forkRepo,
   getChatFiles,
+  getCommits,
   getRepo,
   imageOwner,
   type RepoSource,
@@ -27,11 +30,6 @@ import type { Style } from "@/lib/types";
 export type FormState = { error?: string; username?: string } | undefined;
 
 const USERNAME = /^[a-z0-9_]{3,20}$/;
-
-function safeNext(next: FormDataEntryValue | null) {
-  const value = typeof next === "string" ? next : "";
-  return value.startsWith("/") && !value.startsWith("//") ? value : "/";
-}
 
 // ---------- Auth ----------
 
@@ -49,7 +47,7 @@ export async function signup(_: FormState, formData: FormData): Promise<FormStat
     .prepare("INSERT INTO users (username, password_hash) VALUES (?, ?)")
     .run(username, hashPassword(password));
   await createSession(Number(lastInsertRowid));
-  redirect(safeNext(formData.get("next")));
+  redirect(safeNextPath(formData.get("next")));
 }
 
 export async function login(_: FormState, formData: FormData): Promise<FormState> {
@@ -62,7 +60,7 @@ export async function login(_: FormState, formData: FormData): Promise<FormState
     return { error: "아이디 또는 비밀번호가 올바르지 않습니다.", username };
   }
   await createSession(user.id);
-  redirect(safeNext(formData.get("next")));
+  redirect(safeNextPath(formData.get("next")));
 }
 
 export async function logout() {
@@ -93,10 +91,18 @@ async function ownedRepo(repoId: number) {
   return repo;
 }
 
-export async function commitAction(repoId: number, _: FormState, formData: FormData): Promise<FormState> {
+/** Form submissions send CRLF line breaks; store prompts with plain LF so versions compare cleanly. */
+const normalizePrompt = (value: FormDataEntryValue | null) => String(value ?? "").replace(/\r\n?/g, "\n").trim();
+
+export async function commitAction(_: FormState, formData: FormData): Promise<FormState> {
+  const repoId = Number(formData.get("repoId"));
+  if (!Number.isInteger(repoId)) return { error: "잘못된 요청입니다." };
   await ownedRepo(repoId);
-  const prompt = String(formData.get("prompt") ?? "").trim();
+  const prompt = normalizePrompt(formData.get("prompt"));
   if (!prompt) return { error: "프롬프트를 입력해주세요." };
+  if (prompt === getCommits(repoId).at(-1)?.prompt.replace(/\r\n?/g, "\n").trim()) {
+    return { error: "이전 버전과 달라진 내용이 없습니다." };
+  }
 
   addCommit(repoId, {
     message: String(formData.get("message") ?? "").trim() || "Update prompt",
@@ -119,7 +125,7 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
   const title = String(formData.get("title") ?? "").trim();
   const model = String(formData.get("model") ?? "").trim();
   const style = String(formData.get("style")) as Style;
-  const prompt = String(formData.get("prompt") ?? "").trim();
+  const prompt = normalizePrompt(formData.get("prompt"));
   const visibility = formData.get("visibility") === "private" ? "private" : "public";
   if (!title || !model) return { error: "제목과 사용 모델은 필수입니다." };
   if (!prompt) return { error: "AI와 대화해서 프롬프트를 먼저 만들어주세요." };
@@ -128,7 +134,7 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
   let cover = null;
   const file = formData.get("image");
   if (file instanceof File && file.size > 0) {
-    if (!file.type.startsWith("image/")) return { error: "이미지 파일만 올릴 수 있습니다." };
+    if (!SAFE_IMAGE_TYPES.includes(file.type)) return { error: "JPG·PNG·GIF·WEBP 이미지만 올릴 수 있습니다." };
     if (file.size > MAX_IMAGE_BYTES) return { error: "이미지는 5MB 이하만 올릴 수 있습니다." };
     const imageId = saveImage(user.id, file.type, Buffer.from(await file.arrayBuffer()));
     cover = {
@@ -189,7 +195,7 @@ export async function uploadSourceImageAction(
   const user = await requireUser("/new");
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "파일을 선택해주세요." };
-  if (!file.type.startsWith("image/")) return { ok: false, error: "이미지 파일만 올릴 수 있습니다." };
+  if (!SAFE_IMAGE_TYPES.includes(file.type)) return { ok: false, error: "JPG·PNG·GIF·WEBP 이미지만 올릴 수 있습니다." };
   if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "이미지는 5MB 이하만 올릴 수 있습니다." };
   const id = saveImage(user.id, file.type, Buffer.from(await file.arrayBuffer()));
   return { ok: true, src: `/api/images/${id}` };
@@ -218,7 +224,6 @@ export async function runTestAction(slug: string, prompt: string, submit: boolea
 
 export type ChatFileInfo = { id: number; name: string; mime: string };
 
-const CHAT_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const CHAT_TEXT_EXT = /\.(txt|md|markdown|json|csv|log|html?)$/i;
 const MAX_CHAT_FILE_BYTES = 10 * 1024 * 1024;
 
@@ -232,7 +237,7 @@ export async function uploadChatFileAction(
   if (file.size > MAX_CHAT_FILE_BYTES) return { ok: false, error: `${file.name}: 10MB 이하만 올릴 수 있습니다.` };
 
   let mime = file.type;
-  if (CHAT_IMAGE_TYPES.includes(mime) || mime === "application/pdf") {
+  if (SAFE_IMAGE_TYPES.includes(mime) || mime === "application/pdf") {
     // supported as-is
   } else if (mime.startsWith("text/") || CHAT_TEXT_EXT.test(file.name)) {
     mime = "text/plain";

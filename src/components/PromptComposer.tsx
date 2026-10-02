@@ -82,6 +82,7 @@ export function PromptComposer() {
   }, []);
 
   async function addFiles(files: FileList | File[]) {
+    setError(null);
     const list = Array.from(files).slice(0, MAX_ATTACHMENTS - attachments.length);
     if (files.length > list.length) setError(`한 번에 최대 ${MAX_ATTACHMENTS}개까지 첨부할 수 있어요.`);
     setUploading((n) => n + list.length);
@@ -91,7 +92,7 @@ export function PromptComposer() {
         data.set("file", file);
         const res = await uploadChatFileAction(data);
         setUploading((n) => n - 1);
-        if (!res.ok) return setError(res.error);
+        if (!res.ok) return setError((prev) => (prev ? `${prev}\n${res.error}` : res.error));
         const preview = res.file.mime.startsWith("image/") ? URL.createObjectURL(file) : undefined;
         setAttachments((prev) => [...prev, { ...res.file, preview }]);
       }),
@@ -256,7 +257,7 @@ export function PromptComposer() {
             })}
             {pending && <p className="label-mono text-secondary">{agent.name}가 참고 자료를 찾고 프롬프트를 다듬는 중…</p>}
           </div>
-          {error && <p className="border-t border-frame px-4 py-2 text-sm text-tile-pink">{error}</p>}
+          {error && <p className="whitespace-pre-line border-t border-frame px-4 py-2 text-sm text-tile-pink">{error}</p>}
           {(attachments.length > 0 || uploading > 0) && (
             <div className="flex flex-wrap gap-1.5 border-t border-frame px-3 pt-3">
               {attachments.map((f) => (

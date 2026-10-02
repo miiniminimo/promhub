@@ -81,7 +81,7 @@ export function NewPromptForm() {
         <input
           name="image"
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/gif,image/webp"
           onChange={onImage}
           className="mt-2 block w-full text-sm text-secondary file:mr-4 file:rounded-pill file:border-0 file:bg-slate file:px-4 file:py-2 file:font-mono file:text-xs file:uppercase file:text-muted"
         />
