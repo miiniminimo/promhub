@@ -6,6 +6,7 @@ import { getChallenge, grade, scoreOf, type TestResult } from "@/lib/challenges"
 import { SAFE_IMAGE_TYPES } from "@/lib/image-types";
 import { getPost } from "@/lib/posts";
 import { safeNextPath } from "@/lib/safe-redirect";
+import { STYLES } from "@/lib/styles";
 import { createSession, destroySession, getCurrentUser, hashPassword, requireUser, verifyPassword } from "@/lib/server/auth";
 import { sql } from "@/lib/server/db";
 import {
@@ -116,26 +117,32 @@ export async function toggleVisibilityAction(repoId: number) {
   revalidatePath("/", "layout");
 }
 
-const STYLES: Style[] = ["anime", "photo", "illustration"];
+const isStyle = (value: string): value is Style => STYLES.some((s) => s.value === value);
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+/** Validates and stores an uploaded image; returns its id, or an error message. */
+async function storeImage(ownerId: number, file: File): Promise<number | string> {
+  if (!SAFE_IMAGE_TYPES.includes(file.type)) return "JPG·PNG·GIF·WEBP 이미지만 올릴 수 있습니다.";
+  if (file.size > MAX_IMAGE_BYTES) return "이미지는 5MB 이하만 올릴 수 있습니다.";
+  return saveImage(ownerId, file.type, Buffer.from(await file.arrayBuffer()));
+}
 
 export async function createRepoAction(_: FormState, formData: FormData): Promise<FormState> {
   const user = await requireUser("/new");
   const title = String(formData.get("title") ?? "").trim();
   const model = String(formData.get("model") ?? "").trim();
-  const style = String(formData.get("style")) as Style;
+  const style = String(formData.get("style"));
   const prompt = normalizePrompt(formData.get("prompt"));
   const visibility = formData.get("visibility") === "private" ? "private" : "public";
   if (!title || !model) return { error: "제목과 사용 모델은 필수입니다." };
   if (!prompt) return { error: "AI와 대화해서 프롬프트를 먼저 만들어주세요." };
-  if (!STYLES.includes(style)) return { error: "스타일을 선택해주세요." };
+  if (!isStyle(style)) return { error: "스타일을 선택해주세요." };
 
   let cover = null;
   const file = formData.get("image");
   if (file instanceof File && file.size > 0) {
-    if (!SAFE_IMAGE_TYPES.includes(file.type)) return { error: "JPG·PNG·GIF·WEBP 이미지만 올릴 수 있습니다." };
-    if (file.size > MAX_IMAGE_BYTES) return { error: "이미지는 5MB 이하만 올릴 수 있습니다." };
-    const imageId = saveImage(user.id, file.type, Buffer.from(await file.arrayBuffer()));
+    const imageId = await storeImage(user.id, file);
+    if (typeof imageId === "string") return { error: imageId };
     cover = {
       src: `/api/images/${imageId}`,
       width: Number(formData.get("imageWidth")) || 1024,
@@ -194,10 +201,8 @@ export async function uploadSourceImageAction(
   const user = await requireUser("/new");
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "파일을 선택해주세요." };
-  if (!SAFE_IMAGE_TYPES.includes(file.type)) return { ok: false, error: "JPG·PNG·GIF·WEBP 이미지만 올릴 수 있습니다." };
-  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "이미지는 5MB 이하만 올릴 수 있습니다." };
-  const id = saveImage(user.id, file.type, Buffer.from(await file.arrayBuffer()));
-  return { ok: true, src: `/api/images/${id}` };
+  const id = await storeImage(user.id, file);
+  return typeof id === "string" ? { ok: false, error: id } : { ok: true, src: `/api/images/${id}` };
 }
 
 // ---------- Prompt tests ----------
@@ -260,7 +265,7 @@ export async function chatPromptBuilder(
   const user = await requireUser("/new");
   if (!message.trim() && fileIds.length === 0) return { ok: false, error: "메시지를 입력하거나 파일을 첨부해주세요." };
   if (fileIds.length > MAX_FILES_PER_TURN) return { ok: false, error: `한 번에 최대 ${MAX_FILES_PER_TURN}개까지 첨부할 수 있습니다.` };
-  if (!STYLES.includes(context.style)) return { ok: false, error: "스타일을 선택해주세요." };
+  if (!isStyle(context.style)) return { ok: false, error: "스타일을 선택해주세요." };
 
   // Only this user's own files are ever loaded, whatever ids the client sends.
   const turns = history.slice(-20).map((t) => ({
