@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getChallenge, grade, scoreOf, type TestResult } from "@/lib/challenges";
 import { SAFE_IMAGE_TYPES } from "@/lib/image-types";
 import { getPost } from "@/lib/posts";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { createSession, destroySession, getCurrentUser, hashPassword, requireUser, verifyPassword } from "@/lib/server/auth";
 import { getDb } from "@/lib/server/db";
 import {
@@ -29,11 +30,6 @@ export type FormState = { error?: string; username?: string } | undefined;
 
 const USERNAME = /^[a-z0-9_]{3,20}$/;
 
-function safeNext(next: FormDataEntryValue | null) {
-  const value = typeof next === "string" ? next : "";
-  return value.startsWith("/") && !value.startsWith("//") ? value : "/";
-}
-
 // ---------- Auth ----------
 
 export async function signup(_: FormState, formData: FormData): Promise<FormState> {
@@ -50,7 +46,7 @@ export async function signup(_: FormState, formData: FormData): Promise<FormStat
     .prepare("INSERT INTO users (username, password_hash) VALUES (?, ?)")
     .run(username, hashPassword(password));
   await createSession(Number(lastInsertRowid));
-  redirect(safeNext(formData.get("next")));
+  redirect(safeNextPath(formData.get("next")));
 }
 
 export async function login(_: FormState, formData: FormData): Promise<FormState> {
@@ -63,7 +59,7 @@ export async function login(_: FormState, formData: FormData): Promise<FormState
     return { error: "아이디 또는 비밀번호가 올바르지 않습니다.", username };
   }
   await createSession(user.id);
-  redirect(safeNext(formData.get("next")));
+  redirect(safeNextPath(formData.get("next")));
 }
 
 export async function logout() {

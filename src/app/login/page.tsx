@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/AuthForm";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { getCurrentUser } from "@/lib/server/auth";
 
 export default async function Page(props: PageProps<"/login">) {
   const { next } = await props.searchParams;
-  const nextPath = typeof next === "string" ? next : "/me";
+  const nextPath = safeNextPath(next, "/me");
   if (await getCurrentUser()) redirect(nextPath);
 
   return (
