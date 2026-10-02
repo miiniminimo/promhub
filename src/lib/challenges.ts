@@ -136,6 +136,79 @@ The meeting today has been pushed to 3 PM.`,
       { kind: "maxLength", label: "800자 이하", value: 800 },
     ],
   },
+  {
+    slug: "brand-persona",
+    level: 1,
+    title: "톤 고정: 브랜드 페르소나",
+    category: "기본기",
+    description: `카페 브랜드 **"모닝빈"** 의 SNS 담당자 페르소나로 답하게 하는 시스템 프롬프트를 작성하세요.
+
+### 요구사항
+- 페르소나(누구로서 말하는지)를 정의합니다.
+- 말투를 구체적으로 지정합니다. (예: 반말/존댓말, 이모지 사용 여부)
+- 고객의 질문은 \`{{question}}\` 변수로 전달됩니다.
+- 모르는 내용(메뉴·가격 등)은 지어내지 말라고 지시합니다.
+- 300자 이하로 작성합니다.`,
+    tests: [
+      { kind: "includes", label: "페르소나 정의", any: ["you are", "너는", "당신은", "역할", "담당자"] },
+      { kind: "includes", label: "말투 지정", any: ["말투", "존댓말", "반말", "tone", "어조", "이모지"] },
+      { kind: "placeholder", label: "{{question}} 변수 사용", name: "question" },
+      { kind: "includes", label: "지어내기 금지", any: ["지어내", "추측", "모르면", "모를 때", "확인되지", "don't make up", "do not invent"] },
+      { kind: "maxLength", label: "300자 이하", value: 300 },
+    ],
+  },
+  {
+    slug: "anime-character-tags",
+    level: 2,
+    title: "이미지 프롬프트: 애니 캐릭터 태그",
+    category: "이미지 생성",
+    description: `Illustrious(SDXL 계열) 모델용 **애니 캐릭터 일러스트** 프롬프트를 태그 형식으로 작성하세요.
+
+### 요구사항
+- 품질 태그로 시작합니다. (\`masterpiece\`, \`best quality\` 등)
+- 인물 수 태그를 넣습니다. (\`1girl\`, \`1boy\` 등)
+- 머리·눈·의상 등 캐릭터 특징 태그를 넣습니다.
+- 배경을 지정합니다.
+- 마지막 줄에 \`Negative prompt:\` 로 피할 요소를 적습니다.
+
+### 예시 형식
+\`\`\`
+masterpiece, best quality, 1girl, silver hair, ...
+Negative prompt: lowres, bad anatomy, ...
+\`\`\``,
+    tests: [
+      { kind: "includes", label: "품질 태그", any: ["masterpiece", "best quality", "amazing quality"] },
+      { kind: "regex", label: "인물 수 태그", pattern: "\\b\\d+(girl|boy)s?\\b" },
+      { kind: "includes", label: "캐릭터 특징", any: ["hair", "eyes", "uniform", "dress", "outfit"] },
+      { kind: "includes", label: "배경 지정", any: ["background", "outdoors", "indoors", "street", "sky", "room", "forest"] },
+      { kind: "regex", label: "Negative prompt 줄", pattern: "^Negative prompt:\\s*\\S" },
+    ],
+  },
+  {
+    slug: "meeting-minutes",
+    level: 3,
+    title: "회의록 정리: 결정사항과 할 일",
+    category: "추출",
+    description: `회의 녹취록에서 **결정사항**과 **할 일(담당자·기한)** 을 뽑아 정리하는 프롬프트를 작성하세요.
+
+### 요구사항
+- 녹취록은 \`{{transcript}}\` 변수로 전달됩니다.
+- 결정사항과 할 일을 구분된 섹션으로 출력하게 합니다.
+- 할 일마다 담당자와 기한을 표시하고, 없으면 "미정"으로 쓰게 합니다.
+- 녹취록에 없는 내용은 추가하지 말라고 지시합니다.
+- 출력 형식(마크다운 표 또는 JSON)을 지정합니다.
+- 200자 이상, 900자 이하로 작성합니다.`,
+    tests: [
+      { kind: "placeholder", label: "{{transcript}} 변수 사용", name: "transcript" },
+      { kind: "includes", label: "결정사항 섹션", any: ["결정사항", "결정 사항", "decision"] },
+      { kind: "includes", label: "담당자·기한", any: ["담당자", "owner", "assignee"] },
+      { kind: "includes", label: "누락 시 미정", any: ["미정", "tbd", "unknown"] },
+      { kind: "includes", label: "추가 금지", any: ["없는 내용", "추가하지", "지어내", "only from", "do not add"] },
+      { kind: "includes", label: "출력 형식 지정", any: ["표", "table", "json", "markdown", "마크다운"] },
+      { kind: "minLength", label: "200자 이상", value: 200 },
+      { kind: "maxLength", label: "900자 이하", value: 900 },
+    ],
+  },
 ];
 
 export function getChallenge(slug: string) {
@@ -151,7 +224,7 @@ export function grade(prompt: string, tests: TestCase[]): TestResult[] {
         return { label: t.label, passed: !!hit, detail: hit ? `"${hit}" 발견` : `다음 중 하나 필요: ${t.any.join(", ")}` };
       }
       case "regex": {
-        const count = prompt.match(new RegExp(t.pattern, "gi"))?.length ?? 0;
+        const count = prompt.match(new RegExp(t.pattern, "gim"))?.length ?? 0;
         const min = t.min ?? 1;
         return { label: t.label, passed: count >= min, detail: `${count}회 매칭 (필요: ${min}회 이상)` };
       }
@@ -170,3 +243,5 @@ export function grade(prompt: string, tests: TestCase[]): TestResult[] {
 export function scoreOf(results: TestResult[]) {
   return Math.round((results.filter((r) => r.passed).length / results.length) * 100);
 }
+
+export const CATEGORIES = [...new Set(CHALLENGES.map((c) => c.category))];
