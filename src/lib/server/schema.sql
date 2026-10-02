@@ -43,7 +43,6 @@ CREATE TABLE IF NOT EXISTS commits (
   hash            TEXT NOT NULL,
   message         TEXT NOT NULL,
   prompt          TEXT NOT NULL,
-  negative_prompt TEXT,
   created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 CREATE INDEX IF NOT EXISTS commits_repo ON commits(repo_id, id);

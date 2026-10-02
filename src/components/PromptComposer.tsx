@@ -1,13 +1,25 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { chatPromptBuilder, type ChatFileInfo, uploadChatFileAction } from "@/app/actions";
+import { AGENTS } from "@/lib/agents";
+import { styleOf } from "@/lib/styles";
 import type { Style } from "@/lib/types";
 
 /** A chat attachment already stored on the server; `preview` is a local object URL for images. */
 type Attachment = ChatFileInfo & { preview?: string };
 
-type ChatMessage = { role: "user" | "assistant"; text: string; raw?: string; files?: Attachment[] };
+type ChatMessage = {
+  role: "user" | "assistant";
+  text: string;
+  raw?: string;
+  files?: Attachment[];
+  /** Assistant turns: which style agent answered, what it referenced and what it filled in. */
+  agent?: Style;
+  references?: { title: string; url: string }[];
+  filled?: string[];
+};
 
 const ACCEPT = "image/jpeg,image/png,image/gif,image/webp,application/pdf,.txt,.md,.json,.csv,.log,text/*";
 const MAX_ATTACHMENTS = 5;
@@ -31,13 +43,22 @@ function AttachmentChip({ file, onRemove }: { file: Attachment; onRemove?: () =>
   );
 }
 
+/** Sets a still-empty field of the surrounding form; returns whether it changed. */
+function fillIfEmpty(form: HTMLFormElement, name: string, value: string) {
+  const field = form.elements.namedItem(name);
+  if (!(field instanceof HTMLInputElement) || field.value.trim() || !value.trim()) return false;
+  field.value = value;
+  return true;
+}
+
 /**
- * Builds the New Prompt form's prompt through a chat with the AI. The current draft is
- * read-only here (changes are requested in the chat) and is submitted via hidden inputs.
+ * Builds the New Prompt form's prompt through a chat with the style agent matching the
+ * selected style. The draft is read-only here (changes are requested in the chat) and is
+ * submitted via a hidden input.
  */
 export function PromptComposer() {
   const [prompt, setPrompt] = useState("");
-  const [negativePrompt, setNegativePrompt] = useState("");
+  const [style, setStyle] = useState<Style>("anime");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -48,6 +69,17 @@ export function PromptComposer() {
   const [pending, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const agent = AGENTS[style];
+
+  // Follow the style radio in the surrounding form: it picks which agent answers next.
+  useEffect(() => {
+    const form = rootRef.current?.closest("form");
+    if (!form) return;
+    const sync = () => setStyle((String(new FormData(form).get("style") ?? "anime") as Style));
+    sync();
+    form.addEventListener("change", sync);
+    return () => form.removeEventListener("change", sync);
+  }, []);
 
   async function addFiles(files: FileList | File[]) {
     const list = Array.from(files).slice(0, MAX_ATTACHMENTS - attachments.length);
@@ -73,10 +105,7 @@ export function PromptComposer() {
     // Read the model/style the user picked elsewhere in the same form.
     const form = rootRef.current?.closest("form");
     const data = form ? new FormData(form) : null;
-    const context = {
-      model: String(data?.get("model") ?? ""),
-      style: (String(data?.get("style") ?? "anime") as Style),
-    };
+    const context = { model: String(data?.get("model") ?? ""), style };
     const history = messages.map((m) => ({
       role: m.role,
       content: m.role === "assistant" ? m.raw ?? m.text : m.text,
@@ -102,9 +131,24 @@ export function PromptComposer() {
         return;
       }
       const { result } = res;
-      setMessages((prev) => [...prev, { role: "assistant", text: result.reply, raw: result.raw }]);
+      const filled = form
+        ? [
+            fillIfEmpty(form, "title", result.title) && "제목",
+            fillIfEmpty(form, "model", result.model) && "사용 모델",
+          ].filter((f): f is string => !!f)
+        : [];
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: result.reply,
+          raw: result.raw,
+          agent: result.agent,
+          references: result.references,
+          filled,
+        },
+      ]);
       if (result.prompt) setPrompt(result.prompt);
-      setNegativePrompt(result.negativePrompt);
       setReady(result.ready);
       requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
     });
@@ -113,11 +157,10 @@ export function PromptComposer() {
   return (
     <div ref={rootRef}>
       <input type="hidden" name="prompt" value={prompt} />
-      <input type="hidden" name="negativePrompt" value={negativePrompt} />
 
       <div className="flex items-end justify-between gap-4 border-b border-frame pb-3">
         <span className="label-mono text-secondary">프롬프트 *</span>
-        <span className="label-mono text-mint">AI와 대화로 만들기</span>
+        <span className="label-mono text-mint">AI 에이전트와 대화로 만들기</span>
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -137,39 +180,81 @@ export function PromptComposer() {
             dragging ? "border-mint" : "border-frame"
           }`}
         >
+          <div className="flex items-center gap-3 border-b border-frame px-4 py-3">
+            <span className={`label-mono rounded-[20px] px-2.5 py-1 ${styleOf(style).tagClass}`}>{styleOf(style).label}</span>
+            <div className="min-w-0">
+              <p className="text-[15px] font-bold leading-tight">{agent.name}</p>
+              <p className="truncate text-xs text-secondary">{agent.tagline}</p>
+            </div>
+          </div>
           <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto p-4">
             {messages.length === 0 && (
-              <p className="text-sm leading-relaxed text-secondary">
-                만들고 싶은 결과물을 설명해 주세요. AI가 질문하면서 프롬프트를 완성해 줘요.
-                <br />
-                <span className="text-muted">예: 비 오는 밤 네온사인 거리를 걷는 고양이</span>
-                <br />
-                <br />
-                📎 참고 이미지를 올리면 스타일을, 대화 기록(txt·md·pdf)을 올리면 그 안의 프롬프트를 정리해 줘요.
-                파일을 여기로 끌어다 놓아도 돼요.
-              </p>
-            )}
-            {messages.map((m, i) => (
-              <div key={i} className={`flex flex-col gap-1.5 ${m.role === "user" ? "items-end" : "items-start"}`}>
-                {m.files && m.files.length > 0 && (
-                  <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
-                    {m.files.map((f) => (
-                      <AttachmentChip key={f.id} file={f} />
-                    ))}
-                  </div>
-                )}
-                {m.text && (
-                  <p
-                    className={`max-w-[85%] whitespace-pre-wrap rounded-tile px-4 py-2.5 text-[14px] leading-relaxed ${
-                      m.role === "user" ? "bg-mint text-black" : "bg-slate text-muted"
-                    }`}
-                  >
-                    {m.text}
-                  </p>
-                )}
+              <div className="space-y-3 text-sm leading-relaxed text-secondary">
+                <p>
+                  만들고 싶은 결과물을 설명해 주세요. {agent.name}가 질문하고 PromHub의 비슷한 프롬프트를 참고하며
+                  완성해 줘요. 스타일을 바꾸면 담당 에이전트도 바뀌어요.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {agent.examples.map((ex) => (
+                    <button
+                      key={ex}
+                      type="button"
+                      onClick={() => setInput(ex)}
+                      className="rounded-pill border border-frame px-3 py-1.5 text-left text-xs text-muted transition-colors duration-150 hover:border-mint"
+                    >
+                      {ex}
+                    </button>
+                  ))}
+                </div>
+                <p>📎 참고 이미지를 올리면 스타일을, 대화 기록(txt·md·pdf)을 올리면 그 안의 프롬프트를 정리해 줘요.</p>
               </div>
-            ))}
-            {pending && <p className="label-mono text-secondary">AI가 프롬프트를 다듬는 중…</p>}
+            )}
+            {messages.map((m, i) => {
+              const prevAgent = messages.slice(0, i).findLast((x) => x.agent)?.agent;
+              return (
+                <div key={i} className={`flex flex-col gap-1.5 ${m.role === "user" ? "items-end" : "items-start"}`}>
+                  {m.agent && prevAgent && prevAgent !== m.agent && (
+                    <p className="label-mono self-center py-1 text-secondary">— {AGENTS[m.agent].name}로 전환 —</p>
+                  )}
+                  {m.agent && <span className="label-mono text-secondary">{AGENTS[m.agent].name}</span>}
+                  {m.files && m.files.length > 0 && (
+                    <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
+                      {m.files.map((f) => (
+                        <AttachmentChip key={f.id} file={f} />
+                      ))}
+                    </div>
+                  )}
+                  {m.text && (
+                    <p
+                      className={`max-w-[85%] whitespace-pre-wrap rounded-tile px-4 py-2.5 text-[14px] leading-relaxed ${
+                        m.role === "user" ? "bg-mint text-black" : "bg-slate text-muted"
+                      }`}
+                    >
+                      {m.text}
+                    </p>
+                  )}
+                  {m.references && m.references.length > 0 && (
+                    <div className="max-w-[85%] space-y-1">
+                      <p className="label-mono text-secondary">참고한 프롬프트</p>
+                      {m.references.map((r) => (
+                        <Link
+                          key={r.url}
+                          href={r.url}
+                          target="_blank"
+                          className="link-hover block truncate text-xs text-mint underline"
+                        >
+                          ↗ {r.title}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                  {m.filled && m.filled.length > 0 && (
+                    <p className="text-xs text-secondary">✓ {m.filled.join(", ")}을(를) 채웠어요</p>
+                  )}
+                </div>
+              );
+            })}
+            {pending && <p className="label-mono text-secondary">{agent.name}가 참고 자료를 찾고 프롬프트를 다듬는 중…</p>}
           </div>
           {error && <p className="border-t border-frame px-4 py-2 text-sm text-tile-pink">{error}</p>}
           {(attachments.length > 0 || uploading > 0) && (
@@ -235,15 +320,16 @@ export function PromptComposer() {
           </div>
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3 font-mono text-[13px] leading-relaxed">
             {prompt ? (
-              <>
-                <p className="whitespace-pre-wrap break-words text-muted">{prompt}</p>
-                {negativePrompt && (
-                  <div>
-                    <p className="label-mono text-secondary">Negative</p>
-                    <p className="mt-1 whitespace-pre-wrap break-words text-secondary">{negativePrompt}</p>
-                  </div>
-                )}
-              </>
+              prompt.split("\n").map((line, i) => (
+                <p
+                  key={i}
+                  className={`whitespace-pre-wrap break-words ${
+                    line.startsWith("Negative prompt:") ? "text-secondary" : "text-muted"
+                  }`}
+                >
+                  {line}
+                </p>
+              ))
             ) : (
               <p className="text-secondary">대화를 시작하면 여기에 프롬프트 초안이 만들어져요.</p>
             )}

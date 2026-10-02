@@ -5,13 +5,12 @@ import { useActionState, useState } from "react";
 import { commitAction } from "@/app/actions";
 import { fieldClass, monoFieldClass } from "./ui";
 
-type Props = { repoId: number; prompt: string; negativePrompt: string | null };
+type Props = { repoId: number; prompt: string };
 
-export function CommitForm({ repoId, prompt: initialPrompt, negativePrompt: initialNegative }: Props) {
+export function CommitForm({ repoId, prompt: initialPrompt }: Props) {
   const [state, action, pending] = useActionState(commitAction.bind(null, repoId), undefined);
   const [prompt, setPrompt] = useState(initialPrompt);
-  const [negativePrompt, setNegativePrompt] = useState(initialNegative ?? "");
-  const unchanged = prompt.trim() === initialPrompt && negativePrompt.trim() === (initialNegative ?? "");
+  const unchanged = prompt.trim() === initialPrompt.trim();
 
   return (
     <form action={action} className="space-y-4">
@@ -22,16 +21,6 @@ export function CommitForm({ repoId, prompt: initialPrompt, negativePrompt: init
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={9}
-          className={`${monoFieldClass} mt-2`}
-        />
-      </label>
-      <label className="block">
-        <span className="label-mono text-secondary">Negative prompt</span>
-        <textarea
-          name="negativePrompt"
-          value={negativePrompt}
-          onChange={(e) => setNegativePrompt(e.target.value)}
-          rows={3}
           className={`${monoFieldClass} mt-2`}
         />
       </label>

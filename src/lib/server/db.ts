@@ -13,6 +13,7 @@ function open() {
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   db.exec(readFileSync(path.join(process.cwd(), "src/lib/server/schema.sql"), "utf8"));
+  migrate(db);
 
   // Challenges are defined in code; keep the table in sync on every boot.
   const upsert = db.prepare(`
@@ -27,6 +28,19 @@ function open() {
     );
   })();
   return db;
+}
+
+/** One-off schema changes for databases created by earlier versions. */
+function migrate(db: Database.Database) {
+  const commitColumns = db.prepare("PRAGMA table_info(commits)").all() as { name: string }[];
+  if (commitColumns.some((c) => c.name === "negative_prompt")) {
+    // The negative prompt now lives in the prompt text as a trailing "Negative prompt:" line.
+    db.transaction(() => {
+      db.exec(`UPDATE commits SET prompt = prompt || char(10) || 'Negative prompt: ' || negative_prompt
+               WHERE negative_prompt IS NOT NULL AND trim(negative_prompt) <> ''`);
+      db.exec("ALTER TABLE commits DROP COLUMN negative_prompt");
+    })();
+  }
 }
 
 // Opened lazily on first use (not at import time) so `next build` workers that only

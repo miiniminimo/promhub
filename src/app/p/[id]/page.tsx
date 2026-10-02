@@ -5,6 +5,7 @@ import { ForkButton } from "@/components/ForkButton";
 import { PromptBlock } from "@/components/PromptBlock";
 import { StyleTag } from "@/components/StyleTag";
 import { getPost } from "@/lib/posts";
+import { joinNegative } from "@/lib/prompt-format";
 
 export default async function PostPage(props: PageProps<"/p/[id]">) {
   const { id } = await props.params;
@@ -58,8 +59,7 @@ export default async function PostPage(props: PageProps<"/p/[id]">) {
           ))}
         </dl>
 
-        <PromptBlock label="Prompt" text={post.prompt} />
-        {post.negativePrompt && <PromptBlock label="Negative prompt" text={post.negativePrompt} />}
+        <PromptBlock label="Prompt" text={joinNegative(post.prompt, post.negativePrompt)} />
 
         <Link
           href={post.sourceUrl}
