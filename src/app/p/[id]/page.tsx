@@ -2,15 +2,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ForkButton } from "@/components/ForkButton";
+import { LikeButton } from "@/components/LikeButton";
 import { PromptBlock } from "@/components/PromptBlock";
 import { StyleTag } from "@/components/StyleTag";
 import { getPost } from "@/lib/posts";
 import { joinNegative } from "@/lib/prompt-format";
+import { getCurrentUser } from "@/lib/server/auth";
+import { likeInfo } from "@/lib/server/social";
 
 export default async function PostPage(props: PageProps<"/p/[id]">) {
   const { id } = await props.params;
   const post = getPost(id);
   if (!post) notFound();
+  const user = await getCurrentUser();
+  const like = likeInfo("post", post.id, user?.id ?? null);
 
   const params = [
     ["Sampler", post.params.sampler],
@@ -40,11 +45,16 @@ export default async function PostPage(props: PageProps<"/p/[id]">) {
           <StyleTag style={post.style} />
           <h1 className="mt-3 text-[28px] font-bold leading-tight">{post.title}</h1>
           <p className="label-mono mt-3 font-normal text-secondary">
-            @{post.author} · ♥ {post.likes.toLocaleString()} · {post.createdAt.slice(0, 10)}
+            @{post.author} · Civitai ♥ {post.likes.toLocaleString()} · {post.createdAt.slice(0, 10)}
           </p>
         </div>
 
-        <ForkButton postId={post.id} />
+        <div className="flex gap-3">
+          <LikeButton kind="post" targetId={post.id} liked={!!like.liked} count={like.count} signedIn={!!user} />
+          <div className="flex-1">
+            <ForkButton postId={post.id} />
+          </div>
+        </div>
 
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-tile border border-frame bg-frame">
           <div className="col-span-2 bg-canvas px-4 py-3">

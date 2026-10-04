@@ -83,6 +83,15 @@ export function listUserRepos(ownerId: number) {
   );
 }
 
+/** A user's public repos (originals and forks) for their profile page. */
+export function listPublicRepos(ownerId: number) {
+  return (
+    sql(`${SELECT_REPO} WHERE r.owner_id = ? AND r.visibility = 'public' ORDER BY r.updated_at DESC`).all(
+      ownerId,
+    ) as RepoRow[]
+  ).map(toSummary);
+}
+
 /** Public original prompts (not forks) for the explore feed. */
 export function listPublicOriginals() {
   return (

@@ -3,12 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CommitForm } from "@/components/CommitForm";
 import { ForkButton } from "@/components/ForkButton";
+import { LikeButton } from "@/components/LikeButton";
 import { PromptBlock } from "@/components/PromptBlock";
 import { StyleTag } from "@/components/StyleTag";
 import { VisibilityBadge } from "@/components/VisibilityBadge";
 import { VisibilityToggle } from "@/components/VisibilityToggle";
 import { getCurrentUser } from "@/lib/server/auth";
 import { getCommits, getRepo, getSources } from "@/lib/server/repos";
+import { likeInfo } from "@/lib/server/social";
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleString("ko-KR", {
@@ -35,6 +37,7 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
   const selected = Number.isInteger(requested) && requested >= 0 && requested <= head ? requested : head;
   const viewing = commits[selected];
   const editing = isOwner && edit === "1";
+  const like = likeInfo("repo", String(repo.id), user?.id ?? null);
 
   return (
     <main className="mx-auto w-full max-w-[1300px] px-6 py-10 lg:px-12">
@@ -50,7 +53,10 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
         )}
         <div className="min-w-0 flex-1">
           <h1 className="break-all font-mono text-2xl font-bold">
-            <span className="text-secondary">{repo.owner}</span> / {repo.name}
+            <Link href={`/u/${repo.owner}`} className="link-hover text-secondary">
+              {repo.owner}
+            </Link>{" "}
+            / {repo.name}
           </h1>
           <p className="mt-1.5 text-muted">{repo.description}</p>
           {repo.forkedLabel && (
@@ -69,7 +75,8 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
             <span className="label-mono text-secondary">사용 모델 · {repo.model}</span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <LikeButton kind="repo" targetId={String(repo.id)} liked={!!like.liked} count={like.count} signedIn={!!user} />
           {isOwner ? (
             <VisibilityToggle repoId={repo.id} visibility={repo.visibility} />
           ) : (
