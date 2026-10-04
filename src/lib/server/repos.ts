@@ -29,59 +29,24 @@ export type RepoSummary = {
 /** A source image: `src` is what we render, `link` the original page/URL it came from (if any). */
 export type RepoSource = { src: string; link: string | null };
 
-export type Commit = {
-  id: number;
-  hash: string;
-  message: string;
-  prompt: string;
-  createdAt: string;
-};
+export type Commit = { id: number; hash: string; message: string; prompt: string; createdAt: string };
 
-type RepoRow = {
-  id: number;
-  owner_id: number;
-  owner: string;
-  name: string;
-  description: string;
-  model: string;
-  style: Style;
-  cover_json: string | null;
-  visibility: Visibility;
-  forked_post_id: string | null;
-  forked_repo_id: number | null;
-  forked_label: string | null;
-  commit_count: number;
-  head_prompt: string;
-  created_at: string;
-  updated_at: string;
-};
-
+// Columns are aliased to RepoSummary's field names, so rows only need the cover parsed.
 const SELECT_REPO = `
-  SELECT r.*, u.username AS owner,
-    (SELECT COUNT(*) FROM commits c WHERE c.repo_id = r.id) AS commit_count,
-    (SELECT prompt FROM commits c WHERE c.repo_id = r.id ORDER BY c.id DESC LIMIT 1) AS head_prompt
+  SELECT r.id, r.owner_id AS ownerId, u.username AS owner, r.name, r.description, r.model, r.style,
+    r.cover_json AS coverJson, r.visibility, r.forked_post_id AS forkedPostId,
+    r.forked_repo_id AS forkedRepoId, r.forked_label AS forkedLabel,
+    r.created_at AS createdAt, r.updated_at AS updatedAt,
+    (SELECT COUNT(*) FROM commits c WHERE c.repo_id = r.id) AS commitCount,
+    (SELECT prompt FROM commits c WHERE c.repo_id = r.id ORDER BY c.id DESC LIMIT 1) AS headPrompt
   FROM repos r JOIN users u ON u.id = r.owner_id`;
 
-function toSummary(row: RepoRow): RepoSummary {
-  return {
-    id: row.id,
-    ownerId: row.owner_id,
-    owner: row.owner,
-    name: row.name,
-    description: row.description,
-    model: row.model,
-    style: row.style,
-    cover: row.cover_json ? (JSON.parse(row.cover_json) as PostImage) : null,
-    visibility: row.visibility,
-    forkedPostId: row.forked_post_id,
-    forkedRepoId: row.forked_repo_id,
-    forkedLabel: row.forked_label,
-    commitCount: row.commit_count,
-    headPrompt: row.head_prompt,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
+type RepoRow = Omit<RepoSummary, "cover"> & { coverJson: string | null };
+
+const toSummary = ({ coverJson, ...row }: RepoRow): RepoSummary => ({
+  ...row,
+  cover: coverJson ? (JSON.parse(coverJson) as PostImage) : null,
+});
 
 const shortHash = () => randomBytes(4).toString("hex").slice(0, 7);
 
@@ -98,49 +63,37 @@ export function slugify(text: string) {
 /** Repo visible to `viewerId` (private repos only to their owner). */
 export function getRepo(id: number, viewerId: number | null) {
   const row = sql(`${SELECT_REPO} WHERE r.id = ?`).get(id) as RepoRow | undefined;
-  if (!row) return null;
-  if (row.visibility === "private" && row.owner_id !== viewerId) return null;
+  if (!row || (row.visibility === "private" && row.ownerId !== viewerId)) return null;
   return toSummary(row);
 }
 
-export function getCommits(repoId: number): Commit[] {
-  return sql(
-      `SELECT id, hash, message, prompt, created_at AS createdAt
-       FROM commits WHERE repo_id = ? ORDER BY id`,
-    )
-    .all(repoId) as Commit[];
+export function getCommits(repoId: number) {
+  return sql("SELECT id, hash, message, prompt, created_at AS createdAt FROM commits WHERE repo_id = ? ORDER BY id").all(
+    repoId,
+  ) as Commit[];
 }
 
-export function getSources(repoId: number): RepoSource[] {
-  return sql("SELECT src, link FROM repo_sources WHERE repo_id = ? ORDER BY sort_order")
-    .all(repoId) as RepoSource[];
+export function getSources(repoId: number) {
+  return sql("SELECT src, link FROM repo_sources WHERE repo_id = ? ORDER BY sort_order").all(repoId) as RepoSource[];
 }
 
 export function listUserRepos(ownerId: number) {
-  return (
-    sql(`${SELECT_REPO} WHERE r.owner_id = ? ORDER BY r.updated_at DESC`).all(ownerId) as RepoRow[]
-  ).map(toSummary);
+  return (sql(`${SELECT_REPO} WHERE r.owner_id = ? ORDER BY r.updated_at DESC`).all(ownerId) as RepoRow[]).map(
+    toSummary,
+  );
 }
 
 /** Public original prompts (not forks) for the explore feed. */
 export function listPublicOriginals() {
   return (
     sql(
-        `${SELECT_REPO} WHERE r.visibility = 'public' AND r.forked_post_id IS NULL AND r.forked_repo_id IS NULL
-         ORDER BY r.created_at DESC`,
-      )
-      .all() as RepoRow[]
+      `${SELECT_REPO} WHERE r.visibility = 'public' AND r.forked_post_id IS NULL AND r.forked_repo_id IS NULL
+       ORDER BY r.created_at DESC`,
+    ).all() as RepoRow[]
   ).map(toSummary);
 }
 
-type NewRepo = {
-  ownerId: number;
-  name: string;
-  description: string;
-  model: string;
-  style: Style;
-  cover: PostImage | null;
-  visibility: Visibility;
+type NewRepo = Pick<RepoSummary, "ownerId" | "name" | "description" | "model" | "style" | "cover" | "visibility"> & {
   prompt: string;
   message: string;
   sources?: RepoSource[];
@@ -149,32 +102,36 @@ type NewRepo = {
   forkedLabel?: string;
 };
 
+const insertCommit = (repoId: number, message: string, prompt: string) =>
+  sql("INSERT INTO commits (repo_id, hash, message, prompt) VALUES (?, ?, ?, ?)").run(
+    repoId,
+    shortHash(),
+    message,
+    prompt,
+  );
+
 export function createRepo(input: NewRepo): number {
   return getDb().transaction(() => {
     const { lastInsertRowid } = sql(
-        `INSERT INTO repos (owner_id, name, description, model, style, cover_json, visibility,
-           forked_post_id, forked_repo_id, forked_label)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
-        input.ownerId,
-        input.name,
-        input.description,
-        input.model,
-        input.style,
-        input.cover ? JSON.stringify(input.cover) : null,
-        input.visibility,
-        input.forkedPostId ?? null,
-        input.forkedRepoId ?? null,
-        input.forkedLabel ?? null,
-      );
+      `INSERT INTO repos (owner_id, name, description, model, style, cover_json, visibility,
+         forked_post_id, forked_repo_id, forked_label)
+       VALUES (@ownerId, @name, @description, @model, @style, @coverJson, @visibility,
+         @forkedPostId, @forkedRepoId, @forkedLabel)`,
+    ).run({
+      ownerId: input.ownerId,
+      name: input.name,
+      description: input.description,
+      model: input.model,
+      style: input.style,
+      visibility: input.visibility,
+      coverJson: input.cover ? JSON.stringify(input.cover) : null,
+      forkedPostId: input.forkedPostId ?? null,
+      forkedRepoId: input.forkedRepoId ?? null,
+      forkedLabel: input.forkedLabel ?? null,
+    });
     const repoId = Number(lastInsertRowid);
-    sql(
-      "INSERT INTO commits (repo_id, hash, message, prompt) VALUES (?, ?, ?, ?)",
-    ).run(repoId, shortHash(), input.message, input.prompt);
-    const insertSource = sql(
-      "INSERT INTO repo_sources (repo_id, src, link, sort_order) VALUES (?, ?, ?, ?)",
-    );
+    insertCommit(repoId, input.message, input.prompt);
+    const insertSource = sql("INSERT INTO repo_sources (repo_id, src, link, sort_order) VALUES (?, ?, ?, ?)");
     input.sources?.forEach((s, i) => insertSource.run(repoId, s.src, s.link, i));
     return repoId;
   })();
@@ -199,29 +156,21 @@ export function forkPost(ownerId: number, post: Post) {
 export function forkRepo(ownerId: number, source: RepoSummary) {
   const head = getCommits(source.id).at(-1)!;
   return createRepo({
+    ...source,
     ownerId,
-    name: source.name,
-    description: source.description,
-    model: source.model,
-    style: source.style,
-    cover: source.cover,
     visibility: "private",
     prompt: head.prompt,
     message: `Fork from ${source.owner}/${source.name}@${head.hash}`,
     sources: getSources(source.id),
+    forkedPostId: undefined,
     forkedRepoId: source.id,
     forkedLabel: `${source.owner} / ${source.name}`,
   });
 }
 
-export function addCommit(
-  repoId: number,
-  change: { message: string; prompt: string },
-) {
+export function addCommit(repoId: number, change: { message: string; prompt: string }) {
   getDb().transaction(() => {
-    sql(
-      "INSERT INTO commits (repo_id, hash, message, prompt) VALUES (?, ?, ?, ?)",
-    ).run(repoId, shortHash(), change.message, change.prompt);
+    insertCommit(repoId, change.message, change.prompt);
     sql("UPDATE repos SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(repoId);
   })();
 }
@@ -231,20 +180,16 @@ export function setVisibility(repoId: number, visibility: Visibility) {
 }
 
 export function saveImage(ownerId: number, mime: string, data: Buffer) {
-  const { lastInsertRowid } = sql("INSERT INTO images (owner_id, mime, data) VALUES (?, ?, ?)")
-    .run(ownerId, mime, data);
-  return Number(lastInsertRowid);
+  return Number(sql("INSERT INTO images (owner_id, mime, data) VALUES (?, ?, ?)").run(ownerId, mime, data).lastInsertRowid);
 }
 
 export function getImage(id: number) {
-  return sql("SELECT mime, data FROM images WHERE id = ?").get(id) as
-    | { mime: string; data: Buffer }
-    | undefined;
+  return sql("SELECT mime, data FROM images WHERE id = ?").get(id) as { mime: string; data: Buffer } | undefined;
 }
 
 export function imageOwner(id: number) {
-  const row = sql("SELECT owner_id FROM images WHERE id = ?").get(id) as { owner_id: number } | undefined;
-  return row?.owner_id ?? null;
+  const row = sql("SELECT owner_id AS ownerId FROM images WHERE id = ?").get(id) as { ownerId: number } | undefined;
+  return row?.ownerId ?? null;
 }
 
 // ---------- Chat attachments ----------
@@ -252,17 +197,17 @@ export function imageOwner(id: number) {
 export type ChatFile = { id: number; name: string; mime: string; data: Buffer };
 
 export function saveChatFile(ownerId: number, name: string, mime: string, data: Buffer) {
-  const { lastInsertRowid } = sql("INSERT INTO chat_files (owner_id, name, mime, data) VALUES (?, ?, ?, ?)")
-    .run(ownerId, name, mime, data);
-  return Number(lastInsertRowid);
+  return Number(
+    sql("INSERT INTO chat_files (owner_id, name, mime, data) VALUES (?, ?, ?, ?)").run(ownerId, name, mime, data)
+      .lastInsertRowid,
+  );
 }
 
 /** The requested chat files that belong to `ownerId`, in the requested order. */
 export function getChatFiles(ownerId: number, ids: number[]): ChatFile[] {
   if (ids.length === 0) return [];
   const rows = sql(
-      `SELECT id, name, mime, data FROM chat_files WHERE owner_id = ? AND id IN (${ids.map(() => "?").join(",")})`,
-    )
-    .all(ownerId, ...ids) as ChatFile[];
+    `SELECT id, name, mime, data FROM chat_files WHERE owner_id = ? AND id IN (${ids.map(() => "?").join(",")})`,
+  ).all(ownerId, ...ids) as ChatFile[];
   return ids.flatMap((id) => rows.filter((r) => r.id === id));
 }
