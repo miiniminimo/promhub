@@ -67,6 +67,26 @@ CREATE TABLE IF NOT EXISTS chat_files (
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 
+-- Who follows whom (PromHub users only).
+CREATE TABLE IF NOT EXISTS follows (
+  follower_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  followee_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  PRIMARY KEY (follower_id, followee_id),
+  CHECK (follower_id <> followee_id)
+);
+CREATE INDEX IF NOT EXISTS follows_followee ON follows(followee_id);
+
+-- Liked (saved) works: a Civitai post (kind 'post', id = post id) or a prompt repo (kind 'repo').
+CREATE TABLE IF NOT EXISTS likes (
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind       TEXT NOT NULL CHECK (kind IN ('post', 'repo')),
+  target_id  TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  PRIMARY KEY (user_id, kind, target_id)
+);
+CREATE INDEX IF NOT EXISTS likes_target ON likes(kind, target_id);
+
 -- Prompt test ("coding test" style) problems and graded submissions.
 CREATE TABLE IF NOT EXISTS challenges (
   slug        TEXT PRIMARY KEY,

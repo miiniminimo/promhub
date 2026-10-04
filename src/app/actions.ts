@@ -25,6 +25,7 @@ import {
   slugify,
 } from "@/lib/server/repos";
 import { buildPrompt, type BuilderContext, type BuilderResult, DEFAULT_FILE_MESSAGE } from "@/lib/server/prompt-builder";
+import { getUserByUsername, isFollowing, type LikeKind, likeInfo, setFollow, setLike } from "@/lib/server/social";
 import { saveSubmission } from "@/lib/server/submissions";
 import type { Style } from "@/lib/types";
 
@@ -203,6 +204,26 @@ export async function uploadSourceImageAction(
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "파일을 선택해주세요." };
   const id = await storeImage(user.id, file);
   return typeof id === "string" ? { ok: false, error: id } : { ok: true, src: `/api/images/${id}` };
+}
+
+// ---------- Follows & likes ----------
+
+export async function toggleFollowAction(username: string) {
+  const user = await requireUser(`/u/${username}`);
+  const target = getUserByUsername(username);
+  if (!target || target.id === user.id) throw new Error("Invalid follow target");
+  setFollow(user.id, target.id, !isFollowing(user.id, target.id));
+  revalidatePath("/", "layout");
+}
+
+export async function toggleLikeAction(kind: LikeKind, targetId: string) {
+  const path = kind === "post" ? `/p/${targetId}` : `/repos/${targetId}`;
+  const user = await requireUser(path);
+  // Only works the user can actually see may be liked.
+  const visible = kind === "post" ? !!getPost(targetId) : !!getRepo(Number(targetId), user.id);
+  if (!visible) throw new Error("Not found");
+  setLike(user.id, kind, targetId, !likeInfo(kind, targetId, user.id).liked);
+  revalidatePath("/", "layout");
 }
 
 // ---------- Prompt tests ----------
