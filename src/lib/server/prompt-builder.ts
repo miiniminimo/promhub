@@ -232,75 +232,193 @@ export async function buildPrompt(
   }
 }
 
-// ---------- Demo mode (no API credentials) ----------
+// ---------- Offline mode (no API credentials) ----------
+// Answers like the agent without calling the API: the example ideas offered in the chat have
+// hand-written drafts, and anything else is mapped to English through a keyword table so the
+// draft never carries raw Korean.
 
-const DEMO: Record<Style, { tags: string; negative: string; questions: string[] }> = {
+const OFFLINE: Record<Style, { subject: string; tags: string; negative: string; questions: string[] }> = {
   anime: {
+    subject: "1girl, original character, upper body",
     tags: "masterpiece, best quality, anime style, clean lineart, cel shading, vibrant colors",
     negative: "lowres, bad anatomy, bad hands, extra fingers, blurry, watermark, text",
     questions: [
       "좋아요! 캐릭터의 머리색·표정·의상을 알려주시면 태그로 정리할게요.",
       "포즈와 배경은 어떻게 할까요? (예: 뒤돌아보기, 교실, 벚꽃길)",
-      "거의 다 됐어요. 그림체(키비주얼, 90년대 셀화 등)를 정하면 마무리할게요!",
     ],
   },
   photo: {
+    subject: "A cinematic photograph",
     tags: "photorealistic, natural light, 50mm lens, f/1.8, shallow depth of field, high detail",
     negative: "cartoon, illustration, 3d render, plastic skin, oversaturated, blurry, watermark",
     questions: [
       "좋아요! 조명은 어떤 느낌일까요? (골든아워, 네온, 스튜디오 소프트박스 등)",
       "렌즈나 구도 취향이 있나요? (광각 풍경, 85mm 인물, 매크로 등)",
-      "거의 다 됐어요. 화면 비율이나 분위기를 정하면 마무리할게요!",
     ],
   },
   illustration: {
+    subject: "An illustration",
     tags: "digital illustration, painterly brush strokes, rich textures, soft lighting, detailed background",
     negative: "photo, photorealistic, 3d render, blurry, muddy colors, watermark",
     questions: [
       "좋아요! 어떤 재료 느낌이 좋을까요? (수채화, 과슈, 잉크, 리소 인쇄 등)",
       "색감은 어떻게 할까요? (파스텔, 비비드, 2도 인쇄 등)",
-      "거의 다 됐어요. 용도(포스터, 표지, 스티커)를 알려주면 마무리할게요!",
     ],
   },
 };
 
-/** Demo stand-in for reading an attachment: image → style note, text → its longest line. */
-function demoFromFile(file: ChatFile) {
-  if (isImage(file)) return `in the visual style of the reference image "${file.name}"`;
-  if (file.mime === "application/pdf") return `based on "${file.name}"`;
+/** Hand-written drafts for the example ideas shown in the empty chat (lib/agents.ts). */
+const SCRIPTS: Record<string, { subject: string; title: string; search: string }> = {
+  "벚꽃 아래 교복 입은 소녀, 바람에 머리카락 날림": {
+    subject: "1girl, school uniform, standing under cherry blossom trees, wind, floating hair, falling petals",
+    title: "벚꽃 아래 교복 소녀",
+    search: "girl school uniform cherry blossom",
+  },
+  "사이버펑크 도시의 여우 귀 해커 캐릭터": {
+    subject: "1girl, fox ears, hacker, oversized hoodie, holographic screens, cyberpunk city at night, neon lights",
+    title: "사이버펑크 여우 귀 해커",
+    search: "cyberpunk fox ears neon",
+  },
+  "비 오는 밤 네온사인 거리의 우산 쓴 사람": {
+    subject: "A person holding a transparent umbrella on a rainy street at night, neon signs reflecting on the wet pavement",
+    title: "비 오는 밤 네온 거리",
+    search: "rain night neon street umbrella",
+  },
+  "젖은 콘크리트 위 무선 이어폰 제품 사진": {
+    subject: "Product photo of a matte black wireless earbud case resting on wet concrete, water droplets around it",
+    title: "젖은 콘크리트 위 이어폰",
+    search: "product photo earbud concrete",
+  },
+  "수채화로 그린 창가의 고양이, 노을빛": {
+    subject: "A watercolor illustration of a cat sitting on a windowsill at sunset, warm orange light through the window",
+    title: "노을빛 창가의 고양이",
+    search: "watercolor cat window sunset",
+  },
+  "리소 인쇄 느낌의 여름 바다 포스터": {
+    subject: "A risograph-style summer beach poster with bold waves and a small sailboat, grainy two-color print texture",
+    title: "리소 인쇄 여름 바다 포스터",
+    search: "risograph poster sea summer",
+  },
+};
+
+const KEYWORDS: [RegExp, string][] = [
+  [/노을|석양|골든\s?아워/, "golden hour sunset light"],
+  [/역광/, "backlighting"],
+  [/네온/, "neon lights"],
+  [/비\s?오는|빗|우천/, "rain"],
+  [/밤|야경/, "at night"],
+  [/아침|새벽/, "soft early morning light"],
+  [/뒷모습|뒤돌아/, "seen from behind, looking back"],
+  [/정면/, "front view"],
+  [/클로즈업|얼굴/, "close-up"],
+  [/전신/, "full body"],
+  [/미소|웃는|웃음/, "gentle smile"],
+  [/슬픈|눈물/, "melancholic expression"],
+  [/은발|은색 머리/, "silver hair"],
+  [/금발/, "blonde hair"],
+  [/흑발|검은 머리/, "black hair"],
+  [/갈색 머리|갈발/, "brown hair"],
+  [/분홍 머리|핑크 머리/, "pink hair"],
+  [/단발|짧은 머리/, "short hair"],
+  [/장발|긴 머리/, "long hair"],
+  [/트윈테일/, "twintails"],
+  [/포니테일/, "ponytail"],
+  [/파란 눈|푸른 눈/, "blue eyes"],
+  [/빨간 눈|붉은 눈/, "red eyes"],
+  [/안경/, "glasses"],
+  [/후드/, "hoodie"],
+  [/원피스|드레스/, "dress"],
+  [/정장|수트/, "suit"],
+  [/기모노|한복/, "traditional clothing"],
+  [/교실/, "classroom"],
+  [/벚꽃/, "cherry blossoms"],
+  [/바다|해변/, "ocean beach"],
+  [/숲/, "forest"],
+  [/도시|거리|골목/, "city street"],
+  [/카페/, "cozy cafe"],
+  [/고양이/, "cat"],
+  [/강아지/, "dog"],
+  [/소녀|여자/, "girl"],
+  [/소년|남자/, "boy"],
+  [/수채화/, "watercolor"],
+  [/유화/, "oil painting"],
+  [/잉크|펜화/, "ink linework"],
+  [/과슈/, "gouache"],
+  [/리소/, "risograph print texture"],
+  [/파스텔/, "pastel palette"],
+  [/비비드|선명/, "vivid saturated colors"],
+  [/흑백|모노/, "monochrome"],
+  [/따뜻/, "warm color palette"],
+  [/차가운|시원/, "cool blue tones"],
+  [/몽환|꿈/, "dreamy atmosphere"],
+  [/시네마틱|영화/, "cinematic"],
+  [/85\s?mm/, "85mm lens"],
+  [/35\s?mm/, "35mm lens"],
+  [/광각/, "wide-angle lens"],
+  [/매크로|접사/, "macro lens"],
+  [/심도|아웃포커스|보케/, "shallow depth of field, bokeh"],
+  [/키비주얼/, "key visual composition"],
+  [/90년대|셀화/, "90s cel animation style"],
+  [/치비/, "chibi"],
+  [/세로|9:16/, "vertical 9:16 framing"],
+  [/가로|16:9/, "wide 16:9 framing"],
+  [/포스터/, "poster layout"],
+  [/표지/, "book cover layout"],
+  [/스티커/, "die-cut sticker style"],
+];
+
+/** English phrases for the keywords found in Korean input (input already in English passes through). */
+function toEnglish(text: string): string[] {
+  const clean = text.replace(/^\[[^\]]*\]\n/, "").trim();
+  if (!clean || clean === DEFAULT_FILE_MESSAGE) return [];
+  if (!/[가-힣]/.test(clean)) return [clean.slice(0, 300)];
+  return KEYWORDS.filter(([pattern]) => pattern.test(clean)).map(([, english]) => english);
+}
+
+function fileNotes(file: ChatFile): string[] {
+  if (isImage(file)) return ["matching the style, palette and composition of the reference image"];
+  if (file.mime === "application/pdf") return [];
   const longest = file.data
     .toString("utf8")
     .split(/\r?\n/)
-    .map((l) => l.trim())
+    .map((l) => l.replace(/^\s*(user|assistant|human|ai)\s*:\s*/i, "").trim())
     .sort((a, b) => b.length - a.length)[0];
-  return longest ? longest.slice(0, 300) : "";
+  return longest ? toEnglish(longest) : [];
 }
 
 function demoBuild(history: BuilderTurn[], message: string, files: ChatFile[], ctx: BuilderContext): BuilderResult {
-  const demo = DEMO[ctx.style];
-  const agent = AGENTS[ctx.style];
+  const style = OFFLINE[ctx.style];
+  const model = ctx.model || AGENTS[ctx.style].defaultModel;
   const userTurns = [...history.filter((t) => t.role === "user"), { role: "user" as const, content: message, files }];
-  const details = userTurns
-    .flatMap((t) => [t.content.replace(/^\[[^\]]*\]\n/, ""), ...(t.files ?? []).map(demoFromFile)])
-    .map((s) => s.trim())
-    .filter((s) => s && s !== DEFAULT_FILE_MESSAGE);
   const turn = userTurns.length - 1;
-  const model = ctx.model || agent.defaultModel;
+  const first = userTurns[0].content.replace(/^\[[^\]]*\]\n/, "").trim();
+  const script = SCRIPTS[first];
 
-  // Mimic the agent's search step: keyword hits, else popular posts in this style (first turn only).
-  const hits = turn === 0 ? searchPromHub(details.join(" "), ctx.style, 2) : [];
+  const phrases = [
+    ...(script ? [script.subject] : toEnglish(first)),
+    ...userTurns.slice(1).flatMap((t) => toEnglish(t.content)),
+    ...userTurns.flatMap((t) => (t.files ?? []).flatMap(fileNotes)),
+  ];
+  const unique = [...new Set(phrases)];
+  const body = [unique.length ? unique.join(", ") : style.subject, style.tags].join(", ");
+
+  // Mimic the agent's search step on the first turn: keyword hits, else popular posts in this style.
+  const hits = turn === 0 ? searchPromHub(script?.search ?? unique.join(" "), ctx.style, 2) : [];
   const references = (hits.length ? hits : turn === 0 ? popularInStyle(ctx.style, 2) : []).map((h) => ({
     title: h.title,
     url: h.url,
   }));
 
-  const body = `${details.join(", ")}, ${demo.tags}`;
+  const ready = turn >= 2;
+  const reply = ready
+    ? "완성됐어요! 오른쪽 초안을 확인하고 저장소를 만들면 돼요. 더 바꾸고 싶은 부분이 있으면 말씀해 주세요."
+    : `${turn > 0 ? "반영했어요. " : ""}${style.questions.at(turn)}`;
   return result(
     {
-      reply: `[데모 모드 · ${agent.name}] ${demo.questions[Math.min(turn, demo.questions.length - 1)]}`,
-      prompt: usesNegativePrompt(model) ? joinNegative(body, demo.negative) : body,
-      ready: turn >= 2,
-      title: (details[0] ?? "").slice(0, 40),
+      reply,
+      prompt: usesNegativePrompt(model) ? joinNegative(body, style.negative) : body,
+      ready,
+      title: script?.title ?? first.slice(0, 40),
       model,
       references,
     },

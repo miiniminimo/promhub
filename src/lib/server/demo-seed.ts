@@ -10,8 +10,10 @@ import { slugify } from "./repos";
 
 /** Local demo accounts (also documented in the README); all share this password. */
 export const DEMO_PASSWORD = "demo1234";
-const USERNAMES = ["demo", "mina_draws", "jun_photo"] as const;
+const USERNAMES = ["haru_prompt", "mina_draws", "jun_photo"] as const;
 type Username = (typeof USERNAMES)[number];
+/** The account /demo signs in as. */
+const MAIN: Username = "haru_prompt";
 
 /** The /demo route is a login shortcut, so it only exists on dev servers or when explicitly enabled. */
 export const demoRouteEnabled = () =>
@@ -40,7 +42,7 @@ const WHALE_V1 = "A dreamy watercolor illustration of a whale swimming through c
 
 const REPOS: RepoSpec[] = [
   {
-    owner: "demo",
+    owner: "haru_prompt",
     title: "벚꽃길 교복 캐릭터",
     model: "Illustrious",
     style: "anime",
@@ -59,8 +61,8 @@ const REPOS: RepoSpec[] = [
     ],
   },
   {
-    owner: "demo",
-    title: "실험 중: 무선 이어폰 제품 사진",
+    owner: "haru_prompt",
+    title: "젖은 콘크리트 위 이어폰 제품 사진",
     model: "Flux.1 D",
     style: "photo",
     visibility: "private",
@@ -139,12 +141,12 @@ function insertRepo(ownerId: number, spec: RepoSpec, fork?: { repoId: number; la
 
 /**
  * Creates the demo accounts and their data (repos with several versions, a fork, follows,
- * likes, prompt-test submissions) and returns the main demo user's id. Existing demo data is
+ * likes, prompt-test submissions) and returns the main account's id. Existing demo data is
  * kept unless `reset` is set, in which case the three demo accounts are rebuilt from scratch.
  */
 export function seedDemo({ reset }: { reset: boolean }): number {
   return getDb().transaction(() => {
-    const existing = sql("SELECT id FROM users WHERE username = 'demo'").get() as { id: number } | undefined;
+    const existing = sql("SELECT id FROM users WHERE username = ?").get(MAIN) as { id: number } | undefined;
     if (existing && !reset) return existing.id;
 
     // ON DELETE CASCADE removes their sessions, repos, commits, follows, likes and submissions.
@@ -162,14 +164,14 @@ export function seedDemo({ reset }: { reset: boolean }): number {
 
     const repo = Object.fromEntries(REPOS.map((spec) => [spec.title, insertRepo(id[spec.owner], spec)]));
 
-    // demo forked mina's whale and pushed one change of its own.
+    // The main account forked mina's whale and pushed one change of its own.
     const whale = REPOS.find((r) => r.owner === "mina_draws")!;
     const whaleHead = whale.commits.at(-1)!;
     insertRepo(
-      id.demo,
+      id.haru_prompt,
       {
         ...whale,
-        owner: "demo",
+        owner: "haru_prompt",
         visibility: "public",
         commits: [
           [`Fork from mina_draws/${slugify(whale.title)}`, whaleHead[1], 5],
@@ -180,29 +182,29 @@ export function seedDemo({ reset }: { reset: boolean }): number {
     );
 
     const follow = sql("INSERT INTO follows (follower_id, followee_id, created_at) VALUES (?, ?, ?)");
-    follow.run(id.demo, id.mina_draws, ago(9));
-    follow.run(id.demo, id.jun_photo, ago(6));
-    follow.run(id.mina_draws, id.demo, ago(5));
+    follow.run(id.haru_prompt, id.mina_draws, ago(9));
+    follow.run(id.haru_prompt, id.jun_photo, ago(6));
+    follow.run(id.mina_draws, id.haru_prompt, ago(5));
     follow.run(id.jun_photo, id.mina_draws, ago(4));
 
     const like = sql("INSERT INTO likes (user_id, kind, target_id, created_at) VALUES (?, ?, ?, ?)");
     const animeRepo = String(repo["벚꽃길 교복 캐릭터"]);
-    like.run(id.demo, "post", POSTS.find((p) => p.style === "illustration")!.id, ago(3));
-    like.run(id.demo, "post", POSTS.find((p) => p.style === "photo")!.id, ago(2));
-    like.run(id.demo, "repo", String(repo["비 오는 골목의 네온 인물"]), ago(1));
+    like.run(id.haru_prompt, "post", POSTS.find((p) => p.style === "illustration")!.id, ago(3));
+    like.run(id.haru_prompt, "post", POSTS.find((p) => p.style === "photo")!.id, ago(2));
+    like.run(id.haru_prompt, "repo", String(repo["비 오는 골목의 네온 인물"]), ago(1));
     like.run(id.mina_draws, "repo", animeRepo, ago(1));
     like.run(id.jun_photo, "repo", animeRepo, ago(1));
 
     for (const [slug, prompt, days] of SUBMISSIONS) {
       const challenge = CHALLENGES.find((c) => c.slug === slug)!;
       sql("INSERT INTO submissions (user_id, challenge_slug, prompt, score, created_at) VALUES (?, ?, ?, ?, ?)").run(
-        id.demo,
+        id.haru_prompt,
         slug,
         prompt,
         scoreOf(grade(prompt, challenge.tests)),
         ago(days),
       );
     }
-    return id.demo;
+    return id.haru_prompt;
   })();
 }
