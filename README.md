@@ -32,6 +32,15 @@ export ANTHROPIC_API_KEY=sk-ant-...
 
 키가 없으면 규칙 기반 **데모 모드**로 동작합니다. `PROMHUB_AI_DEMO=1` 로 강제할 수도 있습니다.
 
+### 시연용 데모 경로
+
+`/demo` 에 접속하면 데모 데이터를 만들고 `demo` 계정으로 바로 로그인합니다 (시연 영상 촬영용).
+
+- 개발 서버(`npm run dev`)에서만 동작합니다. `npm start` 에서는 `.env.local` 에 `PROMHUB_DEMO_ROUTE=1` 이 있어야 열립니다.
+- 데모 계정: `demo`, `mina_draws`, `jun_photo` (비밀번호 모두 `demo1234`)
+- 담긴 데이터: 버전 4개짜리 애니 저장소(소스 이미지 포함), 비공개 저장소, 다른 사람 저장소 포크, 팔로우·좋아요, 프롬프트 테스트 2문제 해결 + 1문제 진행 중
+- `/demo?reset=1` 은 데모 데이터를 처음 상태로 다시 만들고, `/demo?next=/new` 처럼 로그인 후 이동할 페이지를 정할 수 있습니다.
+
 ## 구조
 
 | 경로 | 설명 |
@@ -44,6 +53,7 @@ export ANTHROPIC_API_KEY=sk-ant-...
 | `/u/[username]` | 사용자 프로필 (공개 프롬프트, 팔로우) |
 | `/tests`, `/tests/[slug]` | 프롬프트 테스트 (문제 풀이 · 자동 채점) |
 | `/login`, `/signup` | 아이디/비밀번호 인증 (scrypt 해시 + 세션 쿠키) |
+| `/demo` | 시연용: 데모 데이터 생성 + demo 계정 로그인 (개발 서버 전용) |
 
 - DB 스키마: `src/lib/server/schema.sql`
 - 테스트 문제/채점 규칙: `src/lib/challenges.ts`
