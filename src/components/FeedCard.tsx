@@ -36,6 +36,7 @@ export function FeedCard({ item, eager = false }: { item: FeedItem; eager?: bool
         <p className="label-mono mt-2 font-normal text-secondary">
           @{item.author}
           {item.likes != null && ` · ♥ ${item.likes.toLocaleString()}`}
+          {item.activity && ` · ${item.activity}`}
         </p>
       </div>
     </Link>

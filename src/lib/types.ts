@@ -36,4 +36,6 @@ export type FeedItem = {
   likes: number | null;
   /** Prompt preview, only for cards without a cover image (they show the prompt instead). */
   excerpt: string | null;
+  /** Recent-activity line for the following feed, e.g. "v3 · 2일 전". */
+  activity?: string;
 };
