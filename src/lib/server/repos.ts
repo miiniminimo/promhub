@@ -207,8 +207,21 @@ export function saveImage(ownerId: number, mime: string, data: Buffer) {
   return Number(sql("INSERT INTO images (owner_id, mime, data) VALUES (?, ?, ?)").run(ownerId, mime, data).lastInsertRowid);
 }
 
-export function getImage(id: number) {
-  return sql("SELECT mime, data FROM images WHERE id = ?").get(id) as { mime: string; data: Buffer } | undefined;
+/**
+ * An uploaded image, if `viewerId` may see it: its uploader always can; anyone else only when
+ * a repo they can open (public, or their own — e.g. a private fork) uses it as its cover, a
+ * version's result or a source image. Images of private repos therefore stay private.
+ */
+export function getVisibleImage(id: number, viewerId: number | null) {
+  return sql(
+    `SELECT i.mime, i.data FROM images i
+     WHERE i.id = @id AND (i.owner_id = @viewer OR EXISTS (
+       SELECT 1 FROM repos r
+       WHERE (r.visibility = 'public' OR r.owner_id = @viewer) AND (
+         json_extract(r.cover_json, '$.src') = @src
+         OR EXISTS (SELECT 1 FROM commits c WHERE c.repo_id = r.id AND json_extract(c.image_json, '$.src') = @src)
+         OR EXISTS (SELECT 1 FROM repo_sources s WHERE s.repo_id = r.id AND s.src = @src))))`,
+  ).get({ id, viewer: viewerId, src: `/api/images/${id}` }) as { mime: string; data: Buffer } | undefined;
 }
 
 export function imageOwner(id: number) {
