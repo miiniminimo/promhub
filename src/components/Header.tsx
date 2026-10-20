@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/server/auth";
+import { HeaderSearch, HeaderSearchFallback } from "./HeaderSearch";
 
 // The logo links to the explore feed, so it has no separate nav item.
 const NAV = [{ href: "/tests", label: "Prompt Test" }];
@@ -20,11 +22,9 @@ export async function Header() {
             </Link>
           ))}
         </nav>
-        <input
-          type="search"
-          placeholder="Search prompts"
-          className="ml-auto hidden w-60 rounded-tag border border-secondary bg-canvas px-3 py-1.5 text-[15px] placeholder:text-secondary transition-colors duration-150 focus:border-mint focus:outline-none lg:block"
-        />
+        <Suspense fallback={<HeaderSearchFallback />}>
+          <HeaderSearch />
+        </Suspense>
         <Link href={user ? "/me" : "/login"} className="label-mono link-hover ml-auto whitespace-nowrap text-[11px] sm:text-xs lg:ml-0">
           {user ? "My Page" : "Log in"}
         </Link>
