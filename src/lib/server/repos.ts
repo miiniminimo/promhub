@@ -104,6 +104,17 @@ export function listPublicRepos(ownerId: number) {
 }
 
 /** Public original prompts (not forks) for the explore feed. */
+/** Public repos (originals and forks) of the people `userId` follows, most recently updated first. */
+export function listFollowingRepos(userId: number, limit = 60) {
+  return (
+    sql(
+      `${SELECT_REPO} JOIN follows f ON f.followee_id = r.owner_id
+       WHERE f.follower_id = ? AND r.visibility = 'public'
+       ORDER BY r.updated_at DESC LIMIT ?`,
+    ).all(userId, limit) as RepoRow[]
+  ).map(toSummary);
+}
+
 export function listPublicOriginals() {
   return (
     sql(
