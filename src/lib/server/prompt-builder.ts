@@ -1,7 +1,13 @@
 import "server-only";
 
-import Anthropic from "@anthropic-ai/sdk";
-import { betaTool } from "@anthropic-ai/sdk/helpers/beta/json-schema";
+import OpenAI from "openai";
+import type {
+  FunctionTool,
+  ResponseCreateParamsNonStreaming,
+  ResponseFunctionToolCall,
+  ResponseInputContent,
+  ResponseInputItem,
+} from "openai/resources/responses/responses";
 import { AGENTS } from "../agents";
 import { SAFE_IMAGE_TYPES } from "../image-types";
 import { joinNegative, usesNegativePrompt } from "../prompt-format";
@@ -34,7 +40,9 @@ export type BuilderResult = {
   mode: "ai" | "demo";
 };
 
-const MODEL = "claude-opus-5-5";
+/** OpenAI model for the agents; `OPENAI_MODEL` overrides it. */
+const MODEL = process.env.OPENAI_MODEL || "gpt-5.4-mini";
+const MAX_TOOL_ROUNDS = 4;
 let warnedDemo = false;
 
 /** Message sent on the user's behalf when they attach files without typing anything. */
@@ -120,33 +128,52 @@ const contextLine = ({ model, style }: BuilderContext) => `[대상 모델: ${mod
 
 const isImage = (file: ChatFile) => SAFE_IMAGE_TYPES.includes(file.mime);
 
-// ---------- Content blocks ----------
+// ---------- Input items ----------
 
-type ImageType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
-
-function toContentBlock(file: ChatFile): Anthropic.Beta.BetaContentBlockParam {
-  if (isImage(file)) {
-    return { type: "image", source: { type: "base64", media_type: file.mime as ImageType, data: file.data.toString("base64") } };
-  }
+function toContent(file: ChatFile): ResponseInputContent {
+  const base64 = file.data.toString("base64");
+  if (isImage(file)) return { type: "input_image", detail: "auto", image_url: `data:${file.mime};base64,${base64}` };
   if (file.mime === "application/pdf") {
-    return {
-      type: "document",
-      title: file.name,
-      source: { type: "base64", media_type: "application/pdf", data: file.data.toString("base64") },
-    };
+    return { type: "input_file", filename: file.name, file_data: `data:application/pdf;base64,${base64}` };
   }
-  return {
-    type: "document",
-    title: file.name,
-    source: { type: "text", media_type: "text/plain", data: file.data.toString("utf8") },
-  };
+  return { type: "input_text", text: `[첨부 파일: ${file.name}]\n${file.data.toString("utf8")}` };
 }
 
-function toMessageParam(turn: BuilderTurn): Anthropic.Beta.BetaMessageParam {
-  if (turn.role === "assistant" || !turn.files?.length) return { role: turn.role, content: turn.content };
+function toInputItem(turn: BuilderTurn): ResponseInputItem {
+  if (turn.role === "assistant") return { role: "assistant", content: turn.content };
   // Attachments go before the text that refers to them.
-  return { role: "user", content: [...turn.files.map(toContentBlock), { type: "text", text: turn.content }] };
+  return { role: "user", content: [...(turn.files ?? []).map(toContent), { type: "input_text", text: turn.content }] };
 }
+
+const SEARCH_TOOL: FunctionTool = {
+  type: "function",
+  name: "search_promhub",
+  description:
+    "Search PromHub's public prompts (community posts and users' public repositories) for references similar to the user's idea. Returns up to 5 hits with title, author, model, style, url and the prompt text. Use short English keywords.",
+  parameters: {
+    type: "object",
+    properties: {
+      query: { type: "string", description: "Short English keywords, e.g. 'neon rain street cat'" },
+      same_style_only: { type: "boolean", description: "Only return results in the current style" },
+    },
+    required: ["query", "same_style_only"],
+    additionalProperties: false,
+  },
+  strict: true,
+};
+
+function runSearch(call: ResponseFunctionToolCall, style: Style) {
+  try {
+    const { query, same_style_only } = JSON.parse(call.arguments) as { query: string; same_style_only: boolean };
+    const hits = searchPromHub(String(query), same_style_only === false ? null : style);
+    return hits.length ? JSON.stringify(hits) : "No matching prompts found.";
+  } catch {
+    return "Invalid arguments: send a JSON object with query (string) and same_style_only (boolean).";
+  }
+}
+
+// Reasoning effort only exists on reasoning models (gpt-5 / gpt-6 / o-series).
+const supportsReasoning = (model: string) => /^(gpt-5|gpt-6|o\d)/.test(model);
 
 // ---------- Entry point ----------
 
@@ -158,77 +185,63 @@ export async function buildPrompt(
 ): Promise<BuilderResult> {
   if (process.env.PROMHUB_AI_DEMO === "1") return demoBuild(history, message, files, ctx);
 
-  let client: Anthropic;
+  let client: OpenAI;
   try {
-    client = new Anthropic();
+    client = new OpenAI(); // reads OPENAI_API_KEY
   } catch {
-    // No credentials configured at all — keep the flow usable for demos.
+    // No credentials configured at all — keep the flow usable offline.
     return demoBuild(history, message, files, ctx);
   }
 
-  const searchTool = betaTool({
-    name: "search_promhub",
-    description:
-      "Search PromHub's public prompts (community posts and users' public repositories) for references similar to the user's idea. Returns up to 5 hits with title, author, model, style, url and the prompt text. Use short English keywords.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Short English keywords, e.g. 'neon rain street cat'" },
-        same_style_only: { type: "boolean", description: "Only return results in the current style" },
-      },
-      required: ["query"],
-      additionalProperties: false,
-    },
-    run: async ({ query, same_style_only }) => {
-      const hits = searchPromHub(query, same_style_only === false ? null : ctx.style);
-      return hits.length ? JSON.stringify(hits) : "No matching prompts found.";
-    },
-  });
+  const params: Omit<ResponseCreateParamsNonStreaming, "input"> = {
+    model: MODEL,
+    instructions: `${BASE_SYSTEM}\n\n${AGENT_SYSTEM[ctx.style]}`,
+    tools: [SEARCH_TOOL],
+    text: { format: { type: "json_schema", name: "prompt_draft", schema: OUTPUT_SCHEMA, strict: true } },
+    max_output_tokens: 8000,
+    ...(supportsReasoning(MODEL) ? { reasoning: { effort: "low" as const } } : {}),
+  };
 
   try {
-    // The SDK's tool runner drives the agent loop (search → draft) and returns the final message.
-    const response = await client.beta.messages.toolRunner({
-      model: MODEL,
-      max_tokens: 16000,
-      max_iterations: 4,
-      system: [
-        { type: "text", text: BASE_SYSTEM },
-        // Per-agent instructions; each agent's system prefix is cached separately.
-        { type: "text", text: AGENT_SYSTEM[ctx.style], cache_control: { type: "ephemeral" } },
+    let response = await client.responses.create({
+      ...params,
+      input: [
+        ...history.map(toInputItem),
+        toInputItem({ role: "user", content: `${contextLine(ctx)}\n${message}`, files }),
       ],
-      tools: [searchTool],
-      messages: [
-        ...history.map(toMessageParam),
-        toMessageParam({ role: "user", content: `${contextLine(ctx)}\n${message}`, files }),
-      ],
-      // Attachments are resent every turn; cache the conversation prefix so they're billed once.
-      cache_control: { type: "ephemeral" },
-      output_config: { effort: "low", format: { type: "json_schema", schema: OUTPUT_SCHEMA } },
-      // If a safety classifier declines, re-run on Anthropic's recommended fallback model.
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
     });
+    // Agent loop: answer search calls until the model returns its JSON draft.
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      const calls = response.output.filter((item): item is ResponseFunctionToolCall => item.type === "function_call");
+      if (calls.length === 0) break;
+      response = await client.responses.create({
+        ...params,
+        previous_response_id: response.id,
+        input: calls.map((call) => ({ type: "function_call_output" as const, call_id: call.call_id, output: runSearch(call, ctx.style) })),
+      });
+    }
 
-    if (response.stop_reason === "refusal") return result(REFUSED, ctx, "ai");
+    const refused = response.output.some((item) => item.type === "message" && item.content.some((c) => c.type === "refusal"));
+    if (refused) return result(REFUSED, ctx, "ai");
+    if (response.status === "incomplete" || !response.output_text) throw new Error("AI 응답이 중간에 끊겼어요. 다시 시도해주세요.");
 
-    const text = response.content.find((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")?.text ?? "";
+    const text = response.output_text;
     const parsed = JSON.parse(text) as AgentOutput;
     // Only keep links that point inside PromHub.
     parsed.references = parsed.references.filter((r) => /^\/(p|repos)\/[\w-]+$/.test(r.url));
     return { ...result(parsed, ctx, "ai"), raw: text };
   } catch (error) {
-    if (error instanceof Anthropic.AuthenticationError || !(error instanceof Anthropic.APIError)) {
-      // Missing/invalid credentials (or credential resolution failed): fall back to demo mode.
+    if (error instanceof OpenAI.AuthenticationError || error instanceof OpenAI.PermissionDeniedError) {
+      // Invalid key: keep the flow usable offline.
       if (!warnedDemo) {
-        console.warn("[prompt-builder] Claude API unavailable, using demo mode:", (error as Error).message);
+        console.warn("[prompt-builder] OpenAI API key rejected, using offline mode:", error.message);
         warnedDemo = true;
       }
       return demoBuild(history, message, files, ctx);
     }
-    if (error instanceof Anthropic.RateLimitError) {
-      throw new Error("요청이 많아 잠시 후 다시 시도해주세요.");
-    }
-    throw new Error(`AI 응답을 받지 못했어요. (${error.status ?? "network"})`);
+    if (error instanceof OpenAI.RateLimitError) throw new Error("요청이 많아 잠시 후 다시 시도해주세요.");
+    if (error instanceof OpenAI.APIError) throw new Error(`AI 응답을 받지 못했어요. (${error.status ?? "network"})`);
+    throw error;
   }
 }
 
