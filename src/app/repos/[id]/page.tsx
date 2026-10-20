@@ -1,3 +1,4 @@
+import Form from "next/form";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -5,6 +6,7 @@ import { CommitForm } from "@/components/CommitForm";
 import { ForkButton } from "@/components/ForkButton";
 import { LikeButton } from "@/components/LikeButton";
 import { PromptBlock } from "@/components/PromptBlock";
+import { PromptDiff } from "@/components/PromptDiff";
 import { StyleTag } from "@/components/StyleTag";
 import { VisibilityBadge } from "@/components/VisibilityBadge";
 import { VisibilityToggle } from "@/components/VisibilityToggle";
@@ -24,7 +26,7 @@ function formatTime(iso: string) {
 
 export default async function RepoPage(props: PageProps<"/repos/[id]">) {
   const { id } = await props.params;
-  const { v, edit } = await props.searchParams;
+  const { v, edit, diff } = await props.searchParams;
   const user = await getCurrentUser();
   const repo = getRepo(Number(id), user?.id ?? null);
   if (!repo) notFound();
@@ -33,9 +35,15 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
   const commits = getCommits(repo.id);
   const sources = getSources(repo.id);
   const head = commits.length - 1;
-  const requested = Number(v) - 1;
-  const selected = Number.isInteger(requested) && requested >= 0 && requested <= head ? requested : head;
+  /** `?v=` / `?diff=` are 1-based version numbers; anything out of range is ignored. */
+  const versionIndex = (param: unknown) => {
+    const i = Number(param) - 1;
+    return Number.isInteger(i) && i >= 0 && i <= head ? i : null;
+  };
+  const selected = versionIndex(v) ?? head;
   const viewing = commits[selected];
+  const diffIndex = versionIndex(diff);
+  const base = diffIndex !== null && diffIndex !== selected ? diffIndex : null;
   const editing = isOwner && edit === "1";
   const like = likeInfo("repo", String(repo.id), user?.id ?? null);
 
@@ -96,18 +104,65 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
             <CommitForm repoId={repo.id} prompt={commits[head].prompt} />
           ) : (
             <div className="space-y-4">
-              <div className="flex min-h-9 items-center justify-between gap-4">
+              <div className="flex min-h-9 flex-wrap items-center justify-between gap-4">
                 <p className="label-mono text-secondary">
                   v{selected + 1} · {viewing.hash}
                   {selected === head && <span className="ml-2 text-mint">HEAD</span>}
                 </p>
-                {isOwner && (
-                  <Link href={`/repos/${repo.id}?edit=1`} className="btn-mint">
-                    수정하기
-                  </Link>
-                )}
+                <div className="flex flex-wrap items-center gap-4">
+                  {base !== null ? (
+                    <Link href={`/repos/${repo.id}?v=${selected + 1}`} className="label-mono link-hover text-secondary">
+                      프롬프트 보기
+                    </Link>
+                  ) : (
+                    selected > 0 && (
+                      <Link href={`/repos/${repo.id}?v=${selected + 1}&diff=${selected}`} className="label-mono link-hover text-mint">
+                        변경 사항 보기
+                      </Link>
+                    )
+                  )}
+                  {isOwner && (
+                    <Link href={`/repos/${repo.id}?edit=1`} className="btn-mint">
+                      수정하기
+                    </Link>
+                  )}
+                </div>
               </div>
-              <PromptBlock label="Prompt" text={viewing.prompt} />
+              {base !== null ? (
+                <>
+                  <Form action={`/repos/${repo.id}`} className="flex flex-wrap items-center gap-3">
+                    <input type="hidden" name="v" value={selected + 1} />
+                    <label htmlFor="diff-base" className="label-mono text-secondary">
+                      비교 기준
+                    </label>
+                    <select
+                      id="diff-base"
+                      name="diff"
+                      defaultValue={base + 1}
+                      key={base}
+                      className="rounded-tag border border-secondary bg-canvas px-2 py-1.5 font-mono text-[13px] focus:border-mint focus:outline-none"
+                    >
+                      {commits.map((c, i) =>
+                        i === selected ? null : (
+                          <option key={c.id} value={i + 1}>
+                            v{i + 1} · {c.message}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                    <button type="submit" className="label-mono link-hover text-mint">
+                      비교
+                    </button>
+                  </Form>
+                  <PromptDiff
+                    label={`v${base + 1} → v${selected + 1}`}
+                    before={commits[base].prompt}
+                    after={viewing.prompt}
+                  />
+                </>
+              ) : (
+                <PromptBlock label="Prompt" text={viewing.prompt} />
+              )}
             </div>
           )}
         </section>
