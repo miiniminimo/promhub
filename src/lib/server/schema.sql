@@ -109,3 +109,10 @@ CREATE TABLE IF NOT EXISTS submissions (
   created_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 CREATE INDEX IF NOT EXISTS submissions_user ON submissions(user_id, challenge_slug);
+-- Per-user request log for rate limiting (AI chat turns, chat uploads); pruned after a day.
+CREATE TABLE IF NOT EXISTS rate_events (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind    TEXT NOT NULL,
+  at      INTEGER NOT NULL -- epoch ms
+);
+CREATE INDEX IF NOT EXISTS rate_events_user ON rate_events(user_id, kind, at);

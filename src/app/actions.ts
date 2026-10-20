@@ -26,6 +26,7 @@ import {
 } from "@/lib/server/repos";
 import { buildPrompt, type BuilderContext, type BuilderResult, DEFAULT_FILE_MESSAGE } from "@/lib/server/prompt-builder";
 import { getUserByUsername, isFollowing, type LikeKind, likeInfo, setFollow, setLike } from "@/lib/server/social";
+import { takeRateLimit } from "@/lib/server/rate-limit";
 import { saveSubmission } from "@/lib/server/submissions";
 import type { PostImage, Style } from "@/lib/types";
 
@@ -278,6 +279,8 @@ export async function uploadChatFileAction(
   } else {
     return { ok: false, error: `${file.name}: 이미지(JPG·PNG·GIF·WEBP), 텍스트, PDF 파일만 올릴 수 있습니다.` };
   }
+  const limit = takeRateLimit(user.id, "chat_upload", "파일 첨부");
+  if (!limit.ok) return limit;
   const id = saveChatFile(user.id, file.name, mime, Buffer.from(await file.arrayBuffer()));
   return { ok: true, file: { id, name: file.name, mime } };
 }
@@ -291,11 +294,14 @@ export async function chatPromptBuilder(
   message: string,
   fileIds: number[],
   context: BuilderContext,
-): Promise<{ ok: true; result: BuilderResult } | { ok: false; error: string }> {
+): Promise<{ ok: true; result: BuilderResult; remainingToday: number } | { ok: false; error: string }> {
   const user = await requireUser("/new");
   if (!message.trim() && fileIds.length === 0) return { ok: false, error: "메시지를 입력하거나 파일을 첨부해주세요." };
   if (fileIds.length > MAX_FILES_PER_TURN) return { ok: false, error: `한 번에 최대 ${MAX_FILES_PER_TURN}개까지 첨부할 수 있습니다.` };
   if (!isStyle(context.style)) return { ok: false, error: "스타일을 선택해주세요." };
+  // Every turn may call the paid model API, so each user gets a per-minute and daily budget.
+  const limit = takeRateLimit(user.id, "ai_chat", "AI");
+  if (!limit.ok) return limit;
 
   // Only this user's own files are ever loaded, whatever ids the client sends.
   const turns = history.slice(-20).map((t) => ({
@@ -310,7 +316,7 @@ export async function chatPromptBuilder(
       getChatFiles(user.id, fileIds),
       context,
     );
-    return { ok: true, result };
+    return { ok: true, result, remainingToday: limit.remainingToday };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "알 수 없는 오류" };
   }

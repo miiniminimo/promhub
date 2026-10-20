@@ -66,6 +66,7 @@ export function PromptComposer() {
   const [dragging, setDragging] = useState(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -132,6 +133,7 @@ export function PromptComposer() {
         return;
       }
       const { result } = res;
+      setRemaining(res.remainingToday);
       const filled = form
         ? [
             fillIfEmpty(form, "title", result.title) && "제목",
@@ -187,6 +189,9 @@ export function PromptComposer() {
               <p className="text-[15px] font-bold leading-tight">{agent.name}</p>
               <p className="truncate text-xs text-secondary">{agent.tagline}</p>
             </div>
+            {remaining !== null && (
+              <span className="label-mono ml-auto shrink-0 font-normal text-secondary">오늘 {remaining}회 남음</span>
+            )}
           </div>
           <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto p-4">
             {messages.length === 0 && (
