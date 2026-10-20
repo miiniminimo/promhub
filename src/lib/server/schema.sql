@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS commits (
   hash            TEXT NOT NULL,
   message         TEXT NOT NULL,
   prompt          TEXT NOT NULL,
+  -- Result image generated with this version's prompt (PostImage JSON), if one was attached.
+  image_json      TEXT,
   created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 CREATE INDEX IF NOT EXISTS commits_repo ON commits(repo_id, id);

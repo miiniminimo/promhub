@@ -41,6 +41,9 @@ function migrate(db: Database.Database) {
       db.exec("ALTER TABLE commits DROP COLUMN negative_prompt");
     })();
   }
+  if (!commitColumns.some((c) => c.name === "image_json")) {
+    db.exec("ALTER TABLE commits ADD COLUMN image_json TEXT");
+  }
 }
 
 // Opened lazily on first use (not at import time) so `next build` workers that only
