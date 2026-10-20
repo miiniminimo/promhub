@@ -1,9 +1,10 @@
 "use client";
 
-import { startTransition, useActionState, useState } from "react";
+import { startTransition, useActionState } from "react";
 import { createRepoAction } from "@/app/actions";
 import { STYLES } from "@/lib/styles";
 import { PromptComposer } from "./PromptComposer";
+import { ResultImageInput } from "./ResultImageInput";
 import { SourceImagesInput } from "./SourceImagesInput";
 import { fieldClass } from "./ui";
 
@@ -11,16 +12,6 @@ const MODEL_SUGGESTIONS = ["Flux.1 D", "SDXL 1.0", "Pony", "Illustrious", "Krea 
 
 export function NewPromptForm() {
   const [state, action, pending] = useActionState(createRepoAction, undefined);
-  const [preview, setPreview] = useState<{ url: string; width: number; height: number } | null>(null);
-
-  function onImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return setPreview(null);
-    const url = URL.createObjectURL(file);
-    const img = new window.Image();
-    img.onload = () => setPreview({ url, width: img.naturalWidth, height: img.naturalHeight });
-    img.src = url;
-  }
 
   return (
     <form
@@ -76,22 +67,7 @@ export function NewPromptForm() {
 
       <SourceImagesInput />
 
-      <div>
-        <span className="label-mono text-secondary">결과 이미지 (선택, 5MB 이하)</span>
-        <input
-          name="image"
-          type="file"
-          accept="image/jpeg,image/png,image/gif,image/webp"
-          onChange={onImage}
-          className="mt-2 block w-full text-sm text-secondary file:mr-4 file:rounded-pill file:border-0 file:bg-slate file:px-4 file:py-2 file:font-mono file:text-xs file:uppercase file:text-muted"
-        />
-        <input type="hidden" name="imageWidth" value={preview?.width ?? ""} />
-        <input type="hidden" name="imageHeight" value={preview?.height ?? ""} />
-        {preview && (
-          // eslint-disable-next-line @next/next/no-img-element -- local blob preview
-          <img src={preview.url} alt="" className="mt-3 max-h-64 rounded-img border border-frame" />
-        )}
-      </div>
+      <ResultImageInput />
 
       <fieldset>
         <legend className="label-mono text-secondary">공개 설정</legend>

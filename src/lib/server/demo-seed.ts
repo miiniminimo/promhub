@@ -23,6 +23,7 @@ const ago = (days: number) => new Date(Date.now() - days * 864e5).toISOString();
 const hash = () => randomBytes(4).toString("hex").slice(0, 7);
 const coverOf = (style: Style, n: number): PostImage | null =>
   POSTS.filter((p) => p.style === style).at(n)?.images[0] ?? null;
+const result = (style: Style, n: number) => coverOf(style, n) ?? undefined;
 
 type RepoSpec = {
   owner: Username;
@@ -32,8 +33,8 @@ type RepoSpec = {
   visibility: "public" | "private";
   cover: PostImage | null;
   sources?: string[];
-  /** Oldest first: [message, prompt, days ago]. */
-  commits: [string, string, number][];
+  /** Oldest first: [message, prompt, days ago, result image]. */
+  commits: [string, string, number, PostImage?][];
 };
 
 const ANIME_BASE = "masterpiece, best quality, 1girl, school uniform, cherry blossoms";
@@ -47,16 +48,22 @@ const REPOS: RepoSpec[] = [
     model: "Illustrious",
     style: "anime",
     visibility: "public",
-    cover: coverOf("anime", 0),
+    cover: coverOf("anime", 22),
     sources: [coverOf("anime", 1)?.src].filter((s): s is string => !!s),
     commits: [
-      ["Initial commit", `${ANIME_BASE}${ANIME_NEG}`, 9],
-      ["포즈와 바람 추가", `${ANIME_BASE}, looking back, wind, floating hair, petals${ANIME_NEG}`, 7],
-      ["역광 조명으로 변경", `${ANIME_BASE}, looking back, wind, floating hair, petals, backlighting, golden hour${ANIME_NEG}`, 4],
+      ["Initial commit", `${ANIME_BASE}${ANIME_NEG}`, 9, result("anime", 3)],
+      ["포즈와 바람 추가", `${ANIME_BASE}, looking back, wind, floating hair, petals${ANIME_NEG}`, 7, result("anime", 8)],
+      [
+        "역광 조명으로 변경",
+        `${ANIME_BASE}, looking back, wind, floating hair, petals, backlighting, golden hour${ANIME_NEG}`,
+        4,
+        result("anime", 7),
+      ],
       [
         "배경 디테일 보강",
         `${ANIME_BASE}, looking back, wind, floating hair, petals, backlighting, golden hour, detailed background, stone path, depth of field${ANIME_NEG}`,
         1,
+        result("anime", 22),
       ],
     ],
   },
@@ -77,11 +84,16 @@ const REPOS: RepoSpec[] = [
     model: "Flux.1 D",
     style: "illustration",
     visibility: "public",
-    cover: coverOf("illustration", 0),
+    cover: coverOf("illustration", 3),
     commits: [
-      ["Initial commit", WHALE_V1, 12],
-      ["재료 느낌 구체화", `${WHALE_V1}, loose watercolor washes, visible paper grain`, 10],
-      ["팔레트 지정", `${WHALE_V1}, loose watercolor washes, visible paper grain, soft blue and peach palette, morning light`, 6],
+      ["Initial commit", WHALE_V1, 12, result("illustration", 22)],
+      ["재료 느낌 구체화", `${WHALE_V1}, loose watercolor washes, visible paper grain`, 10, result("illustration", 21)],
+      [
+        "팔레트 지정",
+        `${WHALE_V1}, loose watercolor washes, visible paper grain, soft blue and peach palette, morning light`,
+        6,
+        result("illustration", 3),
+      ],
     ],
   },
   {
@@ -90,13 +102,19 @@ const REPOS: RepoSpec[] = [
     model: "Flux.1 D",
     style: "photo",
     visibility: "public",
-    cover: coverOf("photo", 0),
+    cover: coverOf("photo", 9),
     commits: [
-      ["Initial commit", "A person with a transparent umbrella in a rainy alley at night, neon signs reflecting on wet pavement", 8],
+      [
+        "Initial commit",
+        "A person with a transparent umbrella in a rainy alley at night, neon signs reflecting on wet pavement",
+        8,
+        result("photo", 0),
+      ],
       [
         "렌즈와 심도 지정",
         "A person with a transparent umbrella in a rainy alley at night, neon signs reflecting on wet pavement, 35mm lens, f/1.8, shallow depth of field, cinematic color grade",
         3,
+        result("photo", 9),
       ],
     ],
   },
@@ -131,8 +149,12 @@ function insertRepo(ownerId: number, spec: RepoSpec, fork?: { repoId: number; la
       updated,
     ).lastInsertRowid,
   );
-  const insertCommit = sql("INSERT INTO commits (repo_id, hash, message, prompt, created_at) VALUES (?, ?, ?, ?, ?)");
-  for (const [message, prompt, days] of spec.commits) insertCommit.run(repoId, hash(), message, prompt, ago(days));
+  const insertCommit = sql(
+    "INSERT INTO commits (repo_id, hash, message, prompt, image_json, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+  );
+  for (const [message, prompt, days, image] of spec.commits) {
+    insertCommit.run(repoId, hash(), message, prompt, image ? JSON.stringify(image) : null, ago(days));
+  }
   spec.sources?.forEach((src, i) =>
     sql("INSERT INTO repo_sources (repo_id, src, link, sort_order) VALUES (?, ?, ?, ?)").run(repoId, src, src, i),
   );
@@ -173,9 +195,15 @@ export function seedDemo({ reset }: { reset: boolean }): number {
         ...whale,
         owner: "haru_prompt",
         visibility: "public",
+        cover: coverOf("illustration", 19),
         commits: [
-          [`Fork from mina_draws/${slugify(whale.title)}`, whaleHead[1], 5],
-          ["색감을 파스텔 톤으로", whaleHead[1].replace("soft blue and peach palette", "pastel lavender and mint palette"), 2],
+          [`Fork from mina_draws/${slugify(whale.title)}`, whaleHead[1], 5, whaleHead[3]],
+          [
+            "색감을 파스텔 톤으로",
+            whaleHead[1].replace("soft blue and peach palette", "pastel lavender and mint palette"),
+            2,
+            result("illustration", 19),
+          ],
         ],
       },
       { repoId: repo[whale.title], label: `mina_draws / ${slugify(whale.title)}` },

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { commitAction } from "@/app/actions";
+import { ResultImageInput } from "./ResultImageInput";
 import { fieldClass, monoFieldClass } from "./ui";
 
 type Props = { repoId: number; prompt: string };
@@ -13,7 +14,9 @@ export function CommitForm({ repoId, prompt: initialPrompt }: Props) {
   // endless retry loop (QA finding).
   const [state, action, pending] = useActionState(commitAction, undefined);
   const [prompt, setPrompt] = useState(initialPrompt);
-  const unchanged = prompt.trim() === initialPrompt.trim();
+  const [hasImage, setHasImage] = useState(false);
+  // A new result image alone is also a new version.
+  const unchanged = prompt.trim() === initialPrompt.trim() && !hasImage;
 
   return (
     <form action={action} className="space-y-4">
@@ -32,6 +35,7 @@ export function CommitForm({ repoId, prompt: initialPrompt }: Props) {
         <span className="label-mono text-secondary">Commit message</span>
         <input name="message" placeholder="예: 조명을 golden hour 로 변경" className={`${fieldClass} mt-2`} />
       </label>
+      <ResultImageInput label="이 버전의 결과 이미지 (선택, 5MB 이하)" onChange={setHasImage} />
       {state?.error && <p className="text-sm text-muted">{state.error}</p>}
       <div className="flex gap-3">
         <button type="submit" disabled={unchanged || pending} className="btn-mint disabled:opacity-40">

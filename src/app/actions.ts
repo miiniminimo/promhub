@@ -27,7 +27,7 @@ import {
 import { buildPrompt, type BuilderContext, type BuilderResult, DEFAULT_FILE_MESSAGE } from "@/lib/server/prompt-builder";
 import { getUserByUsername, isFollowing, type LikeKind, likeInfo, setFollow, setLike } from "@/lib/server/social";
 import { saveSubmission } from "@/lib/server/submissions";
-import type { Style } from "@/lib/types";
+import type { PostImage, Style } from "@/lib/types";
 
 export type FormState = { error?: string; username?: string } | undefined;
 
@@ -98,16 +98,21 @@ const normalizePrompt = (value: FormDataEntryValue | null) => String(value ?? ""
 export async function commitAction(_: FormState, formData: FormData): Promise<FormState> {
   const repoId = Number(formData.get("repoId"));
   if (!Number.isInteger(repoId)) return { error: "잘못된 요청입니다." };
-  await ownedRepo(repoId);
+  const repo = await ownedRepo(repoId);
   const prompt = normalizePrompt(formData.get("prompt"));
   if (!prompt) return { error: "프롬프트를 입력해주세요." };
-  if (prompt === getCommits(repoId).at(-1)?.prompt.replace(/\r\n?/g, "\n").trim()) {
+
+  const image = await uploadedResult(repo.ownerId, formData);
+  if (typeof image === "string") return { error: image };
+  // A new result image alone is a valid version (same prompt, new output).
+  if (!image && prompt === getCommits(repoId).at(-1)?.prompt.replace(/\r\n?/g, "\n").trim()) {
     return { error: "이전 버전과 달라진 내용이 없습니다." };
   }
 
   addCommit(repoId, {
     message: String(formData.get("message") ?? "").trim() || "Update prompt",
     prompt,
+    image,
   });
   redirect(`/repos/${repoId}`);
 }
@@ -128,6 +133,19 @@ async function storeImage(ownerId: number, file: File): Promise<number | string>
   return saveImage(ownerId, file.type, Buffer.from(await file.arrayBuffer()));
 }
 
+/**
+ * The optional result image of a form (`image` file + its measured `imageWidth`/`imageHeight`):
+ * null when none was attached, an error message when it is invalid.
+ */
+async function uploadedResult(ownerId: number, formData: FormData): Promise<PostImage | null | string> {
+  const file = formData.get("image");
+  if (!(file instanceof File) || file.size === 0) return null;
+  const imageId = await storeImage(ownerId, file);
+  if (typeof imageId === "string") return imageId;
+  const size = (key: string) => Math.min(Math.max(Math.round(Number(formData.get(key))) || 1024, 1), 10000);
+  return { src: `/api/images/${imageId}`, width: size("imageWidth"), height: size("imageHeight") };
+}
+
 export async function createRepoAction(_: FormState, formData: FormData): Promise<FormState> {
   const user = await requireUser("/new");
   const title = String(formData.get("title") ?? "").trim();
@@ -139,17 +157,8 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
   if (!prompt) return { error: "AI와 대화해서 프롬프트를 먼저 만들어주세요." };
   if (!isStyle(style)) return { error: "스타일을 선택해주세요." };
 
-  let cover = null;
-  const file = formData.get("image");
-  if (file instanceof File && file.size > 0) {
-    const imageId = await storeImage(user.id, file);
-    if (typeof imageId === "string") return { error: imageId };
-    cover = {
-      src: `/api/images/${imageId}`,
-      width: Number(formData.get("imageWidth")) || 1024,
-      height: Number(formData.get("imageHeight")) || 1024,
-    };
-  }
+  const cover = await uploadedResult(user.id, formData);
+  if (typeof cover === "string") return { error: cover };
 
   const sources = parseSources(formData.getAll("sources"), user.id);
   if (typeof sources === "string") return { error: sources };

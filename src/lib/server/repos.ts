@@ -29,7 +29,15 @@ export type RepoSummary = {
 /** A source image: `src` is what we render, `link` the original page/URL it came from (if any). */
 export type RepoSource = { src: string; link: string | null };
 
-export type Commit = { id: number; hash: string; message: string; prompt: string; createdAt: string };
+export type Commit = {
+  id: number;
+  hash: string;
+  message: string;
+  prompt: string;
+  /** Result image generated with this version, if the author attached one. */
+  image: PostImage | null;
+  createdAt: string;
+};
 
 // Columns are aliased to RepoSummary's field names, so rows only need the cover parsed.
 const SELECT_REPO = `
@@ -67,10 +75,13 @@ export function getRepo(id: number, viewerId: number | null) {
   return toSummary(row);
 }
 
-export function getCommits(repoId: number) {
-  return sql("SELECT id, hash, message, prompt, created_at AS createdAt FROM commits WHERE repo_id = ? ORDER BY id").all(
-    repoId,
-  ) as Commit[];
+type CommitRow = Omit<Commit, "image"> & { imageJson: string | null };
+
+export function getCommits(repoId: number): Commit[] {
+  const rows = sql(
+    "SELECT id, hash, message, prompt, image_json AS imageJson, created_at AS createdAt FROM commits WHERE repo_id = ? ORDER BY id",
+  ).all(repoId) as CommitRow[];
+  return rows.map(({ imageJson, ...row }) => ({ ...row, image: imageJson ? (JSON.parse(imageJson) as PostImage) : null }));
 }
 
 export function getSources(repoId: number) {
@@ -111,12 +122,13 @@ type NewRepo = Pick<RepoSummary, "ownerId" | "name" | "description" | "model" | 
   forkedLabel?: string;
 };
 
-const insertCommit = (repoId: number, message: string, prompt: string) =>
-  sql("INSERT INTO commits (repo_id, hash, message, prompt) VALUES (?, ?, ?, ?)").run(
+const insertCommit = (repoId: number, message: string, prompt: string, image: PostImage | null) =>
+  sql("INSERT INTO commits (repo_id, hash, message, prompt, image_json) VALUES (?, ?, ?, ?, ?)").run(
     repoId,
     shortHash(),
     message,
     prompt,
+    image ? JSON.stringify(image) : null,
   );
 
 export function createRepo(input: NewRepo): number {
@@ -139,7 +151,8 @@ export function createRepo(input: NewRepo): number {
       forkedLabel: input.forkedLabel ?? null,
     });
     const repoId = Number(lastInsertRowid);
-    insertCommit(repoId, input.message, input.prompt);
+    // The cover is the result image of the first version.
+    insertCommit(repoId, input.message, input.prompt, input.cover);
     const insertSource = sql("INSERT INTO repo_sources (repo_id, src, link, sort_order) VALUES (?, ?, ?, ?)");
     input.sources?.forEach((s, i) => insertSource.run(repoId, s.src, s.link, i));
     return repoId;
@@ -177,10 +190,12 @@ export function forkRepo(ownerId: number, source: RepoSummary) {
   });
 }
 
-export function addCommit(repoId: number, change: { message: string; prompt: string }) {
+export function addCommit(repoId: number, change: { message: string; prompt: string; image: PostImage | null }) {
   getDb().transaction(() => {
-    insertCommit(repoId, change.message, change.prompt);
+    insertCommit(repoId, change.message, change.prompt, change.image);
     sql("UPDATE repos SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(repoId);
+    // The newest result becomes the repo's cover (feed card, profile lists).
+    if (change.image) sql("UPDATE repos SET cover_json = ? WHERE id = ?").run(JSON.stringify(change.image), repoId);
   })();
 }
 

@@ -7,6 +7,7 @@ import { ForkButton } from "@/components/ForkButton";
 import { LikeButton } from "@/components/LikeButton";
 import { PromptBlock } from "@/components/PromptBlock";
 import { PromptDiff } from "@/components/PromptDiff";
+import { ResultImage } from "@/components/ResultImage";
 import { StyleTag } from "@/components/StyleTag";
 import { VisibilityBadge } from "@/components/VisibilityBadge";
 import { VisibilityToggle } from "@/components/VisibilityToggle";
@@ -154,6 +155,12 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
                       비교
                     </button>
                   </Form>
+                  {(commits[base].image || viewing.image) && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <ResultImage image={commits[base].image} caption={`v${base + 1} 결과`} />
+                      <ResultImage image={viewing.image} caption={`v${selected + 1} 결과`} />
+                    </div>
+                  )}
                   <PromptDiff
                     label={`v${base + 1} → v${selected + 1}`}
                     before={commits[base].prompt}
@@ -161,7 +168,10 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
                   />
                 </>
               ) : (
-                <PromptBlock label="Prompt" text={viewing.prompt} />
+                <>
+                  {viewing.image && <ResultImage image={viewing.image} caption={`v${selected + 1} 결과 이미지`} />}
+                  <PromptBlock label="Prompt" text={viewing.prompt} />
+                </>
               )}
             </div>
           )}
@@ -206,10 +216,23 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
                         i === selected && !editing ? "border-mint" : "border-frame hover:border-secondary"
                       }`}
                     >
-                      <p className="label-mono text-secondary">
-                        v{i + 1} · {commit.hash} · {formatTime(commit.createdAt)}
-                      </p>
-                      <p className="mt-1.5 text-[15px] font-bold">{commit.message}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="label-mono text-secondary">
+                            v{i + 1} · {commit.hash} · {formatTime(commit.createdAt)}
+                          </p>
+                          <p className="mt-1.5 text-[15px] font-bold">{commit.message}</p>
+                        </div>
+                        {commit.image && (
+                          <Image
+                            src={commit.image.src}
+                            alt=""
+                            width={44}
+                            height={44}
+                            className="size-11 shrink-0 rounded-img border border-frame object-cover"
+                          />
+                        )}
+                      </div>
                     </Link>
                   </li>
                 ))}
