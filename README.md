@@ -13,7 +13,7 @@ http://localhost:3000 — 첫 실행 시 `data/promhub.db` (SQLite) 가 자동 �
 
 ### AI 스타일 에이전트 (선택)
 
-New Prompt 의 프롬프트는 선택한 스타일의 **AI 에이전트**와 대화로 만들며, Claude API (`claude-opus-5-5`) 를 사용합니다.
+New Prompt 의 프롬프트는 선택한 스타일의 **AI 에이전트**와 대화로 만들며, OpenAI Responses API (기본 `gpt-5.4-mini`) 를 사용합니다.
 
 | 에이전트 | 전문 | 기본 모델 |
 |---|---|---|
@@ -24,8 +24,12 @@ New Prompt 의 프롬프트는 선택한 스타일의 **AI 에이전트**와 대
 에이전트는 `search_promhub` 도구로 PromHub 의 비슷한 공개 프롬프트를 찾아 참고하고, 제목·사용 모델이 비어 있으면 채워 줍니다.
 프롬프트는 한 덩어리로 저장하며, Stable Diffusion 계열 모델이면 마지막 줄에 `Negative prompt: …` 를 붙입니다 (A1111 / Civitai 형식).
 
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+`.env.local` (git 에 올라가지 않음):
+
+```
+OPENAI_API_KEY=sk-proj-...
+# 선택: 다른 모델을 쓰려면
+# OPENAI_MODEL=gpt-5.5
 ```
 
 채팅에 참고 이미지(JPG·PNG·GIF·WEBP)를 올리면 스타일을, 대화 기록(txt·md·json·csv·PDF)을 올리면 그 안의 프롬프트를 정리합니다.
