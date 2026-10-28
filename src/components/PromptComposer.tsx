@@ -19,6 +19,9 @@ type ChatMessage = {
   agent?: Style;
   references?: { title: string; url: string }[];
   filled?: string[];
+  /** Assistant turns that changed the prompt carry the new draft (and whether it is complete). */
+  draft?: string;
+  ready?: boolean;
 };
 
 const ACCEPT = "image/jpeg,image/png,image/gif,image/webp,application/pdf,.txt,.md,.json,.csv,.log,text/*";
@@ -43,6 +46,28 @@ function AttachmentChip({ file, onRemove }: { file: Attachment; onRemove?: () =>
   );
 }
 
+/** A prompt draft shown inside the chat; earlier drafts are dimmed so the latest one stands out. */
+function DraftCard({ text, version, ready, latest }: { text: string; version: number; ready: boolean; latest: boolean }) {
+  return (
+    <div className={`w-full max-w-[85%] rounded-tile border ${latest ? "border-mint" : "border-frame opacity-60"}`}>
+      <p className="label-mono flex items-center gap-2 border-b border-frame px-4 py-2 text-secondary">
+        프롬프트 초안 v{version}
+        {latest && <span className="text-mint">{ready ? "● 완성" : "최신"}</span>}
+      </p>
+      <div className="space-y-2 px-4 py-3 font-mono text-[13px] leading-relaxed">
+        {text.split("\n").map((line, i) => (
+          <p
+            key={i}
+            className={`whitespace-pre-wrap break-words ${line.startsWith("Negative prompt:") ? "text-secondary" : "text-muted"}`}
+          >
+            {line}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Sets a still-empty field of the surrounding form; returns whether it changed. */
 function fillIfEmpty(form: HTMLFormElement, name: string, value: string) {
   const field = form.elements.namedItem(name);
@@ -53,8 +78,8 @@ function fillIfEmpty(form: HTMLFormElement, name: string, value: string) {
 
 /**
  * Builds the New Prompt form's prompt through a chat with the style agent matching the
- * selected style. The draft is read-only here (changes are requested in the chat) and is
- * submitted via a hidden input.
+ * selected style. Each reply that changes the prompt shows the new draft inside the chat
+ * (changes are requested by chatting); the latest draft is submitted via a hidden input.
  */
 export function PromptComposer() {
   const [prompt, setPrompt] = useState("");
@@ -64,7 +89,6 @@ export function PromptComposer() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(0);
   const [dragging, setDragging] = useState(false);
-  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
@@ -149,10 +173,10 @@ export function PromptComposer() {
           agent: result.agent,
           references: result.references,
           filled,
+          ...(result.prompt && result.prompt !== prompt ? { draft: result.prompt, ready: result.ready } : {}),
         },
       ]);
       if (result.prompt) setPrompt(result.prompt);
-      setReady(result.ready);
       requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
     });
   }
@@ -166,7 +190,7 @@ export function PromptComposer() {
         <span className="label-mono text-mint">AI 에이전트와 대화로 만들기</span>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="mt-4">
         {/* Chat */}
         <div
           onDragOver={(e) => {
@@ -179,7 +203,7 @@ export function PromptComposer() {
             setDragging(false);
             if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
           }}
-          className={`flex h-[420px] flex-col rounded-tile border transition-colors duration-150 ${
+          className={`flex h-[560px] flex-col rounded-tile border transition-colors duration-150 ${
             dragging ? "border-mint" : "border-frame"
           }`}
         >
@@ -238,6 +262,14 @@ export function PromptComposer() {
                     >
                       {m.text}
                     </p>
+                  )}
+                  {m.draft && (
+                    <DraftCard
+                      text={m.draft}
+                      version={messages.slice(0, i + 1).filter((x) => x.draft).length}
+                      ready={!!m.ready}
+                      latest={m.draft === prompt && !messages.slice(i + 1).some((x) => x.draft)}
+                    />
                   )}
                   {m.references && m.references.length > 0 && (
                     <div className="max-w-[85%] space-y-1">
@@ -316,31 +348,6 @@ export function PromptComposer() {
           </div>
         </div>
 
-        {/* Live draft */}
-        <div className="flex h-[420px] flex-col rounded-tile border border-frame">
-          <div className="flex items-center justify-between border-b border-frame px-4 py-2.5">
-            <span className="label-mono text-secondary">
-              초안 {ready && <span className="ml-2 text-mint">● 완성</span>}
-            </span>
-            <span className="text-xs text-secondary">고칠 부분은 채팅으로 요청하세요</span>
-          </div>
-          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3 font-mono text-[13px] leading-relaxed">
-            {prompt ? (
-              prompt.split("\n").map((line, i) => (
-                <p
-                  key={i}
-                  className={`whitespace-pre-wrap break-words ${
-                    line.startsWith("Negative prompt:") ? "text-secondary" : "text-muted"
-                  }`}
-                >
-                  {line}
-                </p>
-              ))
-            ) : (
-              <p className="text-secondary">대화를 시작하면 여기에 프롬프트 초안이 만들어져요.</p>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
