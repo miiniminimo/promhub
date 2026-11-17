@@ -478,5 +478,23 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   check("[대화 수정] 남의 미리보기 이미지로 커밋 거부", r.html.includes("미리보기 이미지를 찾을 수 없습니다"));
 }
 
+// ---- Commit message from the chat (no message field)
+{
+  const repo = db().prepare("select id from repos where name='qa-neon-fox'").get().id;
+  const head = () => db().prepare("select message, prompt from commits where repo_id=? order by id desc limit 1").get(repo);
+  let r = await alice.get(`/repos/${repo}?edit=1`);
+  check("[커밋 메시지] 입력칸 없음 (숨은 값만)", !r.html.replace(/<!-- -->/g, "").includes("Commit message") && /<input type="hidden" name="message" value=""/.test(r.html));
+  const base = head().prompt;
+  r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: base + ", rain", message: "" });
+  check("[커밋 메시지] 메시지 없이 프롬프트 수정 → '프롬프트 수정'", r.status === 303 && head().message === "프롬프트 수정");
+  const img = `/api/images/${db().prepare("select id from images where owner_id=(select id from users where username='qa_alice') order by id limit 1").get().id}`;
+  r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: head().prompt, message: "", previewImage: img });
+  check("[커밋 메시지] 이미지만 추가 → '결과 이미지 추가'", r.status === 303 && head().message === "결과 이미지 추가");
+  r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: head().prompt + ", fog", message: "은발로 바꿔줘 · 배경을 밤으로" });
+  check("[커밋 메시지] 채팅 요청이 메시지로", head().message === "은발로 바꿔줘 · 배경을 밤으로");
+  r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: head().prompt + ", mist", message: "가".repeat(500) });
+  check("[커밋 메시지] 200자로 자름", head().message.length === 200);
+}
+
 console.log(`\n기능 QA: ${pass}개 통과, ${fail}개 실패`);
 process.exitCode = fail ? 1 : 0;

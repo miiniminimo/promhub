@@ -130,6 +130,17 @@ function PreviewBubble({ image, chosen, onChoose }: { image: PreviewImage & { la
   );
 }
 
+const MAX_COMMIT_MESSAGE = 100;
+
+/** The user's requests in this chat, e.g. "은발로 바꿔줘 · 배경을 밤으로". */
+function commitMessage(messages: ChatMessage[]) {
+  const text = messages
+    .filter((m) => m.role === "user" && m.text)
+    .map((m) => m.text.replace(/\s+/g, " ").trim())
+    .join(" · ");
+  return text.length > MAX_COMMIT_MESSAGE ? `${text.slice(0, MAX_COMMIT_MESSAGE - 1)}…` : text;
+}
+
 /** Sets a still-empty field of the surrounding form; returns whether it changed. */
 function fillIfEmpty(form: HTMLFormElement, name: string, value: string) {
   const field = form.elements.namedItem(name);
@@ -244,14 +255,8 @@ export function PromptComposer({ previewEnabled, edit, onChange }: ComposerProps
       }
       const { result } = res;
       setRemaining(res.remainingToday);
-      // New prompt: the agent's title fills the form. Edit: the first request becomes the commit message.
-      const filled = form
-        ? [
-            edit
-              ? fillIfEmpty(form, "message", text.slice(0, 80)) && "커밋 메시지를"
-              : fillIfEmpty(form, "title", result.title) && "제목을",
-          ].filter((f): f is string => !!f)
-        : [];
+      // New prompt: the agent's title fills the form (an edit has no title to fill).
+      const filled = form && !edit ? [fillIfEmpty(form, "title", result.title) && "제목을"].filter((f): f is string => !!f) : [];
       setMessages((prev) => [
         ...prev,
         {
@@ -298,6 +303,8 @@ export function PromptComposer({ previewEnabled, edit, onChange }: ComposerProps
       <input type="hidden" name="previewWidth" value={chosen?.width ?? ""} />
       <input type="hidden" name="previewHeight" value={chosen?.height ?? ""} />
       <input type="hidden" name="previewModel" value={chosen?.model ?? ""} />
+      {/* Edit: the commit message is what was asked for in this chat (the server fills a default otherwise). */}
+      {edit && <input type="hidden" name="message" value={commitMessage(messages)} />}
 
       <div className="flex items-end justify-between gap-4 border-b border-frame pb-3">
         <span className="label-mono text-secondary">프롬프트 *</span>
