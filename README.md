@@ -66,9 +66,14 @@ AI 요청은 사용자마다 **1분 10회, 하루 100회**로 제한됩니다(�
 - Civitai 데이터 갱신: `node scripts/fetch-civitai.mjs`
 - 디자인 시스템: `DESIGN.md`
 
-## 로컬 테스트 계정
+## 로컬 계정
 
-로컬 개발 DB 에서 가입해 사용하는 테스트 계정 (실제 서비스용 아님):
+DB 가 비어 있으면 로그인할 계정이 없습니다. 개발 서버에서 `/demo` 에 접속하면 시연 계정(`haru_prompt` / `demo1234`)이 만들어지고 바로 로그인됩니다. 직접 가입해도 됩니다 (`/signup`).
 
-- 아이디: `demo_tester`
-- 비밀번호: `demo1234`
+## QA
+
+```bash
+npm run qa
+```
+
+빌드·타입·린트·단위 테스트(`qa/unit.ts`) 후, 임시 DB 로 `next start` 를 띄워 E2E(`qa/e2e.mjs`)와 기능 점검(`qa/features.mjs`)을 실행합니다. AI 는 오프라인 모드로 고정되어 유료 API 를 호출하지 않습니다. 포트는 `QA_PORT`(기본 3005)로 바꿀 수 있습니다.
