@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ForkButton } from "@/components/ForkButton";
 import { LikeButton } from "@/components/LikeButton";
+import { ModelCard } from "@/components/ModelCard";
 import { PromptBlock } from "@/components/PromptBlock";
 import { StyleTag } from "@/components/StyleTag";
 import { civitaiProfileUrl, getPost } from "@/lib/posts";
@@ -52,25 +53,21 @@ export default async function PostPage(props: PageProps<"/p/[id]">) {
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <LikeButton kind="post" targetId={post.id} liked={!!like.liked} count={like.count} signedIn={!!user} />
-          <div className="flex-1">
+          <div className="min-w-64 flex-1">
             <ForkButton postId={post.id} />
           </div>
         </div>
 
-        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-tile border border-frame bg-frame">
-          <div className="col-span-2 bg-canvas px-4 py-3">
-            <dt className="label-mono text-secondary">사용 모델</dt>
-            <dd className="mt-1 text-lg font-bold">{post.model}</dd>
-          </div>
+        <ModelCard model={post.model}>
           {params.map(([label, value]) => (
             <div key={label} className="bg-canvas px-4 py-3">
               <dt className="label-mono text-secondary">{label}</dt>
               <dd className="mt-1 font-mono text-sm">{value}</dd>
             </div>
           ))}
-        </dl>
+        </ModelCard>
 
         <PromptBlock label="Prompt" text={joinNegative(post.prompt, post.negativePrompt)} />
 

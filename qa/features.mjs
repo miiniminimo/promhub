@@ -95,7 +95,7 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   check("[비교] v1 엔 비교 링크 없음", r.status === 200 && !r.html.includes("변경 사항 보기"));
   r = await get(`/repos/${repo}?v=2&diff=1`);
   const t = r.html.replace(/<!-- -->/g, "");
-  check("[비교] v1 → v2 화면", r.status === 200 && t.includes("v1 → v2") && t.includes("프롬프트 보기") && !t.includes(">Copy<"));
+  check("[비교] v1 → v2 화면 (왼쪽 비교, 오른쪽 현재 프롬프트)", r.status === 200 && t.includes("v1 → v2") && t.includes("프롬프트 보기") && t.indexOf("v1 → v2") < t.indexOf("<aside"));
   check("[비교] 추가/삭제 표시", t.includes("[추가] ") && t.includes("[삭제] ") && /text-mint">\+\d/.test(t) && /text-tile-pink">−\d/.test(t));
   check("[비교] 삭제 단어 soft blue, 추가 단어 pastel pink", /\[삭제\] <\/span>soft blue/.test(t) && /\[추가\] <\/span>pastel pink/.test(t));
   check("[비교] 프롬프트 HTML 이스케이프", !r.html.includes("<img src=x onerror") && r.html.includes("&lt;img src=x"));
@@ -126,7 +126,7 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   const file = await fetch(BASE + img.src); check("[결과이미지] 이미지 응답 PNG", file.status === 200 && file.headers.get("content-type") === "image/png");
   r = await get(`/repos/${repo}`);
   const t = r.html.replace(/<!-- -->/g, "");
-  check("[결과이미지] HEAD 화면에 결과 이미지", t.includes("v3 결과 이미지") && r.html.includes(`src="${img.src}"`));
+  check("[결과이미지] HEAD 화면 왼쪽에 큰 결과 이미지", /alt="[^"]* v3"/.test(t) && t.indexOf(`src="${img.src}"`) < t.indexOf("<aside"));
   check("[결과이미지] 히스토리 썸네일", (r.html.match(new RegExp(`src="${img.src}"`, "g")) ?? []).length >= 2);
   r = await get(`/repos/${repo}?v=2`);
   check("[결과이미지] 이미지 없는 버전은 이미지 영역 없음", r.status === 200 && !r.html.replace(/<!-- -->/g, "").includes("v2 결과 이미지"));
@@ -500,6 +500,22 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   check("[커밋 메시지] 채팅 요청이 메시지로", head().message === "은발로 바꿔줘 · 배경을 밤으로");
   r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: head().prompt + ", mist", message: "가".repeat(500) });
   check("[커밋 메시지] 200자로 자름", head().message.length === 200);
+}
+
+// ---- Repo page uses the post page layout
+{
+  const repo = db().prepare("select id from repos where name='qa-neon-fox'").get().id;
+  const post = POSTS[0];
+  const [rp, pp] = [await bob.get(`/repos/${repo}`), await bob.get(`/p/${post.id}`)];
+  const shell = (h) => h.match(/<main class="([^"]*)"/)?.[1];
+  check("[레이아웃] 저장소·게시물 같은 2단 레이아웃", shell(rp.html) === shell(pp.html) && shell(rp.html)?.includes("lg:grid-cols-[minmax(0,1fr)_420px]"), shell(rp.html));
+  const aside = rp.html.slice(rp.html.indexOf("<aside"));
+  check("[레이아웃] 오른쪽: 스타일·제목·작성자·버튼·모델·프롬프트·히스토리", ["<h1", 'href="/u/qa_alice"', "Fork", "사용 모델", ">Copy<", "History"].every((x) => aside.includes(x)));
+  check("[레이아웃] Fork 영역 최소 너비 (좁으면 다음 줄로)", (rp.html.match(/<div class="min-w-64 flex-1">/g) ?? []).length === 1 && (pp.html.match(/<div class="min-w-64 flex-1">/g) ?? []).length === 1);
+  check("[레이아웃] Fork 버튼 한 줄 (줄바꿈 금지)", /class="btn-mint w-full whitespace-nowrap/.test(rp.html) && /class="btn-mint w-full whitespace-nowrap/.test(pp.html));
+  const own = await alice.get(`/repos/${repo}`);
+  const ownAside = own.html.slice(own.html.indexOf("<aside"));
+  check("[레이아웃] 작성자: 좋아요·공개 전환·수정하기, Fork 없음", ownAside.includes("수정하기") && ownAside.includes("누르면 비공개로 전환") && !ownAside.includes("Fork —"));
 }
 
 console.log(`\n기능 QA: ${pass}개 통과, ${fail}개 실패`);
