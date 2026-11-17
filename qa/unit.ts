@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { CHALLENGES, grade, scoreOf } from "../src/lib/challenges.ts";
-import { joinNegative, usesNegativePrompt } from "../src/lib/prompt-format.ts";
+import { joinNegative, previewPrompt, splitNegative, usesNegativePrompt } from "../src/lib/prompt-format.ts";
 import { safeNextPath } from "../src/lib/safe-redirect.ts";
 import { matchesQuery, searchQuery } from "../src/lib/feed-search.ts";
 import { diffPrompt, diffStats } from "../src/lib/prompt-diff.ts";
@@ -81,6 +81,19 @@ check("검색어 정리", searchQuery(["  a ", "b"]) === "a" && searchQuery(unde
   check("timeAgo 시간", ago(3 * 3600_000) === "3시간 전");
   check("timeAgo 일", ago(2 * 864e5) === "2일 전");
   check("timeAgo 30일 이상 날짜", /2026/.test(ago(40 * 864e5)));
+}
+
+// 8) Negative split + preview prompt.
+{
+  const eq = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+  check("splitNegative 없음", eq(splitNegative("a, b"), { prompt: "a, b", negative: null }));
+  check("splitNegative 있음", eq(splitNegative("a, b\nNegative prompt: x, y"), { prompt: "a, b", negative: "x, y" }));
+  check("splitNegative 여러 줄 본문", eq(splitNegative("l1\nl2\nNegative prompt: z"), { prompt: "l1\nl2", negative: "z" }));
+  check("splitNegative 빈 negative", eq(splitNegative("a\nNegative prompt:   "), { prompt: "a", negative: null }));
+  check("splitNegative ↔ joinNegative", eq(splitNegative(joinNegative("p q", "n m")), { prompt: "p q", negative: "n m" }));
+  const pp = previewPrompt("1girl, silver hair\nNegative prompt: lowres, watermark", "anime");
+  check("미리보기 프롬프트: 스타일 + 본문 + Avoid", pp.startsWith("Anime illustration") && pp.includes("1girl, silver hair") && pp.endsWith("Avoid: lowres, watermark.") && !pp.includes("Negative prompt"));
+  check("미리보기 프롬프트: negative 없으면 Avoid 없음", !previewPrompt("a cat", "photo").includes("Avoid"));
 }
 
 console.log(`\n단위 테스트: ${pass}개 통과, ${fail}개 실패`);

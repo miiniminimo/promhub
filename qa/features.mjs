@@ -282,5 +282,24 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   check("[모델] 제목 없으면 오류", r.text.includes("제목을 입력해주세요"));
 }
 
+// ---- Image preview action (QA runs offline: no key → clear error, quota untouched)
+{
+  const { readdirSync, readFileSync: read } = await import("node:fs");
+  const js = readdirSync(".next/static", { recursive: true }).filter((f) => f.endsWith(".js")).map((f) => read(`.next/static/${f}`, "utf8")).join("\n");
+  const previewId = js.match(/\("([0-9a-f]{40,})",[^)]{0,80}"generatePreviewAction"/)?.[1];
+  const preview = async (who, prompt, style) => {
+    const res = await fetch(BASE + "/new", { method: "POST", redirect: "manual", headers: { cookie: who?.cookie ?? "", "Next-Action": previewId, "Content-Type": "text/plain;charset=UTF-8", Accept: "text/x-component" }, body: JSON.stringify([prompt, style]) });
+    return { status: res.status, redirect: res.headers.get("x-action-redirect") ?? "", text: await res.text() };
+  };
+  check("[미리보기] generatePreviewAction id", !!previewId);
+  const used = () => db().prepare("select count(*) c from rate_events e join users u on u.id=e.user_id where u.username='qa_alice' and kind='image_preview'").get().c;
+  let r = await preview(alice, "a cat on a roof", "photo");
+  check("[미리보기] 키 없음(오프라인) → 안내 + 한도 차감 없음", r.text.includes("OpenAI API 키가 있어야") && used() === 0, r.text.slice(-120));
+  r = await preview(alice, "   ", "photo"); check("[미리보기] 빈 프롬프트 거부", r.text.includes("프롬프트를 먼저 만들어주세요"));
+  r = await preview(alice, "x".repeat(4001), "photo"); check("[미리보기] 4000자 초과 거부", r.text.includes("너무 길어요"));
+  r = await preview(alice, "a cat", "nope"); check("[미리보기] 잘못된 스타일 거부", r.text.includes("스타일을 선택해주세요"));
+  r = await preview(null, "a cat", "photo"); check("[미리보기] 비로그인 → 로그인", r.status === 303 || r.redirect.includes("/login"), `status ${r.status}`);
+}
+
 console.log(`\n기능 QA: ${pass}개 통과, ${fail}개 실패`);
 process.exitCode = fail ? 1 : 0;

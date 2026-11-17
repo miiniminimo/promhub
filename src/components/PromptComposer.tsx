@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { chatPromptBuilder, type ChatFileInfo, uploadChatFileAction } from "@/app/actions";
+import {
+  chatPromptBuilder,
+  type ChatFileInfo,
+  generatePreviewAction,
+  type PreviewImage,
+  uploadChatFileAction,
+} from "@/app/actions";
 import { AGENTS } from "@/lib/agents";
 import { styleOf } from "@/lib/styles";
 import type { Style } from "@/lib/types";
@@ -24,6 +30,8 @@ type ChatMessage = {
   ready?: boolean;
   /** Target image model the agent wrote this draft for. */
   model?: string;
+  /** A rendered preview of draft v`version`. */
+  preview?: PreviewImage & { version: number };
 };
 
 const ACCEPT = "image/jpeg,image/png,image/gif,image/webp,application/pdf,.txt,.md,.json,.csv,.log,text/*";
@@ -49,7 +57,17 @@ function AttachmentChip({ file, onRemove }: { file: Attachment; onRemove?: () =>
 }
 
 /** A prompt draft shown inside the chat; earlier drafts are dimmed so the latest one stands out. */
-function DraftCard({ text, model, version, ready, latest }: { text: string; model?: string; version: number; ready: boolean; latest: boolean }) {
+type DraftCardProps = {
+  text: string;
+  model?: string;
+  version: number;
+  ready: boolean;
+  latest: boolean;
+  /** Shown on the latest draft: renders it with the image model. */
+  preview?: { onClick: () => void; busy: boolean; enabled: boolean };
+};
+
+function DraftCard({ text, model, version, ready, latest, preview }: DraftCardProps) {
   return (
     <div className={`w-full max-w-[85%] rounded-tile border ${latest ? "border-mint" : "border-frame opacity-60"}`}>
       <p className="label-mono flex items-center gap-2 border-b border-frame px-4 py-2 text-secondary">
@@ -67,7 +85,47 @@ function DraftCard({ text, model, version, ready, latest }: { text: string; mode
           </p>
         ))}
       </div>
+      {preview && (
+        <div className="flex items-center gap-3 border-t border-frame px-4 py-2.5">
+          <button
+            type="button"
+            onClick={preview.onClick}
+            disabled={preview.busy || !preview.enabled}
+            className="btn-mint disabled:opacity-40"
+          >
+            {preview.busy ? "그리는 중…" : "이미지 미리보기"}
+          </button>
+          <span className="text-xs text-secondary">
+            {preview.enabled ? "이 초안으로 결과 이미지를 그려봐요" : "OpenAI API 키가 있어야 사용할 수 있어요"}
+          </span>
+        </div>
+      )}
     </div>
+  );
+}
+
+/** A rendered preview in the chat, which the user can pick as the new repo's result image. */
+function PreviewBubble({ image, chosen, onChoose }: { image: PreviewImage & { version: number }; chosen: boolean; onChoose: () => void }) {
+  return (
+    <figure className={`w-full max-w-[85%] rounded-tile border p-2 ${chosen ? "border-mint" : "border-frame"}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- just-generated upload, already sized */}
+      <img src={image.src} alt={`초안 v${image.version} 미리보기`} width={image.width} height={image.height} className="h-auto w-full rounded-[14px]" />
+      <figcaption className="flex flex-wrap items-center gap-3 px-2 pb-1 pt-2.5">
+        <span className="label-mono font-normal text-secondary">
+          초안 v{image.version} 미리보기 · {image.model}
+        </span>
+        <button
+          type="button"
+          onClick={onChoose}
+          aria-pressed={chosen}
+          className={`label-mono ml-auto rounded-pill border px-3 py-1.5 transition-colors duration-150 ${
+            chosen ? "border-mint bg-mint text-black" : "border-frame text-muted hover:border-mint"
+          }`}
+        >
+          {chosen ? "✓ 결과 이미지로 선택됨" : "결과 이미지로 사용"}
+        </button>
+      </figcaption>
+    </figure>
   );
 }
 
@@ -84,7 +142,7 @@ function fillIfEmpty(form: HTMLFormElement, name: string, value: string) {
  * selected style. Each reply that changes the prompt shows the new draft inside the chat
  * (changes are requested by chatting); the latest draft is submitted via a hidden input.
  */
-export function PromptComposer() {
+export function PromptComposer({ previewEnabled }: { previewEnabled: boolean }) {
   const [prompt, setPrompt] = useState("");
   // Target model per style agent: the agent's pick (users can ask for another one in the chat).
   const [models, setModels] = useState<Partial<Record<Style, string>>>({});
@@ -97,6 +155,8 @@ export function PromptComposer() {
   const [error, setError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
+  const [previewing, startPreview] = useTransition();
+  const [chosen, setChosen] = useState<(PreviewImage & { version: number }) | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const agent = AGENTS[style];
@@ -137,7 +197,8 @@ export function PromptComposer() {
     // The style comes from the surrounding form; the title is filled into it below.
     const form = rootRef.current?.closest("form");
     const context = { model, style };
-    const history = messages.map((m) => ({
+    // Preview bubbles are UI only; the agent sees the conversation and its own drafts.
+    const history = messages.filter((m) => !m.preview).map((m) => ({
       role: m.role,
       content: m.role === "assistant" ? m.raw ?? m.text : m.text,
       fileIds: m.files?.map((f) => f.id),
@@ -188,10 +249,29 @@ export function PromptComposer() {
     });
   }
 
+  const draftCount = messages.filter((m) => m.draft).length;
+
+  function preview() {
+    if (!prompt || previewing) return;
+    const version = draftCount;
+    setError(null);
+    startPreview(async () => {
+      const res = await generatePreviewAction(prompt, style);
+      if (!res.ok) return setError(res.error);
+      setMessages((prev) => [...prev, { role: "assistant", text: "", preview: { ...res.image, version } }]);
+      requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
+    });
+  }
+
   return (
     <div ref={rootRef}>
       <input type="hidden" name="prompt" value={prompt} />
       <input type="hidden" name="model" value={model || agent.defaultModel} />
+      {/* The picked preview becomes the result image of v1 (the server re-checks ownership). */}
+      <input type="hidden" name="previewImage" value={chosen?.src ?? ""} />
+      <input type="hidden" name="previewWidth" value={chosen?.width ?? ""} />
+      <input type="hidden" name="previewHeight" value={chosen?.height ?? ""} />
+      <input type="hidden" name="previewModel" value={chosen?.model ?? ""} />
 
       <div className="flex items-end justify-between gap-4 border-b border-frame pb-3">
         <span className="label-mono text-secondary">프롬프트 *</span>
@@ -277,7 +357,19 @@ export function PromptComposer() {
                       version={messages.slice(0, i + 1).filter((x) => x.draft).length}
                       model={m.model}
                       ready={!!m.ready}
+                      preview={
+                        m.draft === prompt && !messages.slice(i + 1).some((x) => x.draft)
+                          ? { onClick: preview, busy: previewing, enabled: previewEnabled && !pending }
+                          : undefined
+                      }
                       latest={m.draft === prompt && !messages.slice(i + 1).some((x) => x.draft)}
+                    />
+                  )}
+                  {m.preview && (
+                    <PreviewBubble
+                      image={m.preview}
+                      chosen={chosen?.src === m.preview.src}
+                      onChoose={() => setChosen(chosen?.src === m.preview!.src ? null : m.preview!)}
                     />
                   )}
                   {m.references && m.references.length > 0 && (
@@ -302,6 +394,7 @@ export function PromptComposer() {
               );
             })}
             {pending && <p className="label-mono text-secondary">{agent.name}가 참고 자료를 찾고 프롬프트를 다듬는 중…</p>}
+            {previewing && <p className="label-mono text-secondary">초안 v{draftCount}로 이미지를 그리는 중… (10~30초)</p>}
           </div>
           {error && <p className="whitespace-pre-line border-t border-frame px-4 py-2 text-sm text-tile-pink">{error}</p>}
           {(attachments.length > 0 || uploading > 0) && (
