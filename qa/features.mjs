@@ -512,7 +512,7 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   const aside = rp.html.slice(rp.html.indexOf("<aside"));
   check("[레이아웃] 오른쪽: 스타일·제목·작성자·버튼·모델·프롬프트", ["<h1", 'href="/u/qa_alice"', "Fork", "사용 모델", ">Copy<"].every((x) => aside.includes(x)));
   check("[레이아웃] Fork 영역 최소 너비 (좁으면 다음 줄로)", (rp.html.match(/<div class="min-w-64 flex-1">/g) ?? []).length === 1 && (pp.html.match(/<div class="min-w-64 flex-1">/g) ?? []).length === 1);
-  check("[레이아웃] Fork 버튼 한 줄 (줄바꿈 금지)", /class="btn-mint w-full whitespace-nowrap/.test(rp.html) && /class="btn-mint w-full whitespace-nowrap/.test(pp.html));
+  check("[레이아웃] Fork 버튼 한 줄 (줄바꿈 금지)", /class="btn-mint [^"]*whitespace-nowrap/.test(rp.html) && /class="btn-mint [^"]*whitespace-nowrap/.test(pp.html));
   const own = await alice.get(`/repos/${repo}`);
   const ownAside = own.html.slice(own.html.indexOf("<aside"));
   check("[레이아웃] 작성자: 좋아요·공개 전환·수정하기, Fork 없음", ownAside.includes("수정하기") && ownAside.includes("누르면 비공개로 전환") && !ownAside.includes("Fork —"));
@@ -535,6 +535,20 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   }
   const own = (await alice.get(`/repos/${repo}`)).html.replace(/<!-- -->/g, "");
   check("[최신만] 작성자는 히스토리·변경 사항 그대로", own.includes(`History · ${commits.length} commits`) && own.includes("변경 사항 보기"));
+}
+
+// ---- Action row buttons share one height
+{
+  const repo = db().prepare("select id from repos where name='qa-neon-fox'").get().id;
+  const row = (html) => html.slice(html.indexOf("<aside"), html.indexOf("사용 모델"));
+  const own = row((await alice.get(`/repos/${repo}`)).html);
+  const other = row((await bob.get(`/repos/${repo}`)).html);
+  const post = row((await bob.get(`/p/${POSTS[0].id}`)).html);
+  const h11 = (html) => (html.match(/class="[^"]*\bh-11\b[^"]*"/g) ?? []).length;
+  check("[버튼 높이] 작성자 줄: 좋아요·공개·수정하기 모두 h-11", h11(own) === 3, `${h11(own)}개`);
+  check("[버튼 높이] 남의 저장소·게시물: 좋아요·Fork 모두 h-11", h11(other) === 2 && h11(post) === 2, `${h11(other)}, ${h11(post)}`);
+  const me = (await alice.get("/me")).html;
+  check("[버튼 높이] 마이페이지 목록 버튼은 원래 크기", !/class="[^"]*\bh-11\b/.test(me.slice(me.indexOf("<ul"))));
 }
 
 console.log(`\n기능 QA: ${pass}개 통과, ${fail}개 실패`);

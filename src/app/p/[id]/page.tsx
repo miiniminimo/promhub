@@ -53,8 +53,8 @@ export default async function PostPage(props: PageProps<"/p/[id]">) {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <LikeButton kind="post" targetId={post.id} liked={!!like.liked} count={like.count} signedIn={!!user} />
+        <div className="flex flex-wrap items-center gap-3">
+          <LikeButton kind="post" targetId={post.id} liked={!!like.liked} count={like.count} signedIn={!!user} size="action" />
           <div className="min-w-64 flex-1">
             <ForkButton postId={post.id} />
           </div>
