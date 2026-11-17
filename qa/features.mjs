@@ -89,21 +89,21 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
 // ---- PR2: version diff
 {
   const repo = db().prepare("select id from repos where name='qa-neon-fox'").get().id;
-  let r = await get(`/repos/${repo}`);
+  let r = await alice.get(`/repos/${repo}`);
   check("[비교] HEAD 에 변경 사항 보기 링크", r.html.includes(`href="/repos/${repo}?v=2&amp;diff=1"`) && r.html.includes("변경 사항 보기"));
-  r = await get(`/repos/${repo}?v=1`);
+  r = await alice.get(`/repos/${repo}?v=1`);
   check("[비교] v1 엔 비교 링크 없음", r.status === 200 && !r.html.includes("변경 사항 보기"));
-  r = await get(`/repos/${repo}?v=2&diff=1`);
+  r = await alice.get(`/repos/${repo}?v=2&diff=1`);
   const t = r.html.replace(/<!-- -->/g, "");
   check("[비교] v1 → v2 화면 (왼쪽 비교, 오른쪽 현재 프롬프트)", r.status === 200 && t.includes("v1 → v2") && t.includes("프롬프트 보기") && t.indexOf("v1 → v2") < t.indexOf("<aside"));
   check("[비교] 추가/삭제 표시", t.includes("[추가] ") && t.includes("[삭제] ") && /text-mint">\+\d/.test(t) && /text-tile-pink">−\d/.test(t));
   check("[비교] 삭제 단어 soft blue, 추가 단어 pastel pink", /\[삭제\] <\/span>soft blue/.test(t) && /\[추가\] <\/span>pastel pink/.test(t));
   check("[비교] 프롬프트 HTML 이스케이프", !r.html.includes("<img src=x onerror") && r.html.includes("&lt;img src=x"));
   check("[비교] 기준 버전 선택 폼", r.html.includes('name="diff"') && r.html.includes('name="v"') && t.includes("v1 · Initial commit"));
-  r = await get(`/repos/${repo}?v=1&diff=2`);
+  r = await alice.get(`/repos/${repo}?v=1&diff=2`);
   check("[비교] 역방향 (v2 → v1)", r.html.replace(/<!-- -->/g, "").includes("v2 → v1"));
   for (const q of ["v=2&diff=2", "v=2&diff=abc", "v=2&diff=99", "v=2&diff=-1", "diff=1.5"]) {
-    r = await get(`/repos/${repo}?${q}`);
+    r = await alice.get(`/repos/${repo}?${q}`);
     check(`[비교] 잘못된 비교값 ${q} → 일반 보기`, r.status === 200 && r.html.includes(">Copy<"));
   }
   const priv = db().prepare("select id from repos where visibility='private' limit 1").get();
@@ -124,13 +124,13 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   const cover = JSON.parse(db().prepare("select cover_json c from repos where id=?").get(repo).c ?? "null");
   check("[결과이미지] 저장소 대표 이미지 = 최신 결과", cover?.src === img?.src);
   const file = await fetch(BASE + img.src); check("[결과이미지] 이미지 응답 PNG", file.status === 200 && file.headers.get("content-type") === "image/png");
-  r = await get(`/repos/${repo}`);
+  r = await alice.get(`/repos/${repo}`);
   const t = r.html.replace(/<!-- -->/g, "");
   check("[결과이미지] HEAD 화면 왼쪽에 큰 결과 이미지", /alt="[^"]* v3"/.test(t) && t.indexOf(`src="${img.src}"`) < t.indexOf("<aside"));
   check("[결과이미지] 히스토리 썸네일", (r.html.match(new RegExp(`src="${img.src}"`, "g")) ?? []).length >= 2);
-  r = await get(`/repos/${repo}?v=2`);
+  r = await alice.get(`/repos/${repo}?v=2`);
   check("[결과이미지] 이미지 없는 버전은 이미지 영역 없음", r.status === 200 && !r.html.replace(/<!-- -->/g, "").includes("v2 결과 이미지"));
-  r = await get(`/repos/${repo}?v=3&diff=2`);
+  r = await alice.get(`/repos/${repo}?v=3&diff=2`);
   const d = r.html.replace(/<!-- -->/g, "");
   check("[결과이미지] 비교 화면 전/후 이미지", d.includes("v2 결과") && d.includes("v3 결과") && d.includes("결과 이미지 없음"));
   check("[결과이미지] 프롬프트 동일 → +0 −0", d.includes("두 버전의 프롬프트가 같습니다"));
@@ -510,12 +510,31 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   const shell = (h) => h.match(/<main class="([^"]*)"/)?.[1];
   check("[레이아웃] 저장소·게시물 같은 2단 레이아웃", shell(rp.html) === shell(pp.html) && shell(rp.html)?.includes("lg:grid-cols-[minmax(0,1fr)_420px]"), shell(rp.html));
   const aside = rp.html.slice(rp.html.indexOf("<aside"));
-  check("[레이아웃] 오른쪽: 스타일·제목·작성자·버튼·모델·프롬프트·히스토리", ["<h1", 'href="/u/qa_alice"', "Fork", "사용 모델", ">Copy<", "History"].every((x) => aside.includes(x)));
+  check("[레이아웃] 오른쪽: 스타일·제목·작성자·버튼·모델·프롬프트", ["<h1", 'href="/u/qa_alice"', "Fork", "사용 모델", ">Copy<"].every((x) => aside.includes(x)));
   check("[레이아웃] Fork 영역 최소 너비 (좁으면 다음 줄로)", (rp.html.match(/<div class="min-w-64 flex-1">/g) ?? []).length === 1 && (pp.html.match(/<div class="min-w-64 flex-1">/g) ?? []).length === 1);
   check("[레이아웃] Fork 버튼 한 줄 (줄바꿈 금지)", /class="btn-mint w-full whitespace-nowrap/.test(rp.html) && /class="btn-mint w-full whitespace-nowrap/.test(pp.html));
   const own = await alice.get(`/repos/${repo}`);
   const ownAside = own.html.slice(own.html.indexOf("<aside"));
   check("[레이아웃] 작성자: 좋아요·공개 전환·수정하기, Fork 없음", ownAside.includes("수정하기") && ownAside.includes("누르면 비공개로 전환") && !ownAside.includes("Fork —"));
+}
+
+// ---- Other people see only the latest version
+{
+  const guest = new Browser();
+  const repo = db().prepare("select id from repos where name='qa-neon-fox'").get().id;
+  const commits = db().prepare("select id, hash, prompt from commits where repo_id=? order by id").all(repo);
+  const head = commits.at(-1);
+  const esc = (t) => t.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  for (const [who, name] of [[guest, "비로그인"], [bob, "다른 유저"]]) {
+    let r = await who.get(`/repos/${repo}`);
+    const t = r.html.replace(/<!-- -->/g, "");
+    check(`[최신만] ${name}: 히스토리·버전 링크·변경 사항 없음`, r.status === 200 && !t.includes("History") && !t.includes("변경 사항 보기") && !r.html.includes(`?v=1"`) && !t.includes(commits[0].hash));
+    r = await who.get(`/repos/${repo}?v=1&diff=2`);
+    const t2 = r.html.replace(/<!-- -->/g, "");
+    check(`[최신만] ${name}: ?v=1&diff=2 로 들어와도 최신 프롬프트만`, r.status === 200 && !t2.includes("v2 → v1") && !t2.includes("비교 기준") && t2.includes(esc(head.prompt).slice(0, 60)));
+  }
+  const own = (await alice.get(`/repos/${repo}`)).html.replace(/<!-- -->/g, "");
+  check("[최신만] 작성자는 히스토리·변경 사항 그대로", own.includes(`History · ${commits.length} commits`) && own.includes("변경 사항 보기"));
 }
 
 console.log(`\n기능 QA: ${pass}개 통과, ${fail}개 실패`);

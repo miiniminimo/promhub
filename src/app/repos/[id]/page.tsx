@@ -43,9 +43,10 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
     const i = Number(param) - 1;
     return Number.isInteger(i) && i >= 0 && i <= head ? i : null;
   };
-  const selected = versionIndex(v) ?? head;
+  // Other people only see the latest version; history, old versions and diffs are the owner's.
+  const selected = (isOwner ? versionIndex(v) : null) ?? head;
   const viewing = commits[selected];
-  const diffIndex = versionIndex(diff);
+  const diffIndex = isOwner ? versionIndex(diff) : null;
   const base = diffIndex !== null && diffIndex !== selected ? diffIndex : null;
   const editing = isOwner && edit === "1";
   const like = likeInfo("repo", String(repo.id), user?.id ?? null);
@@ -176,23 +177,25 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
 
         {!editing && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4">
-              <p className="label-mono text-secondary">
-                v{selected + 1} · {viewing.hash}
-                {selected === head && <span className="ml-2 text-mint">HEAD</span>}
-              </p>
-              {base !== null ? (
-                <Link href={versionLink(selected + 1)} className="label-mono link-hover text-secondary">
-                  프롬프트 보기
-                </Link>
-              ) : (
-                selected > 0 && (
-                  <Link href={versionLink(selected + 1, `&diff=${selected}`)} className="label-mono link-hover text-mint">
-                    변경 사항 보기
+            {isOwner && (
+              <div className="flex items-center justify-between gap-4">
+                <p className="label-mono text-secondary">
+                  v{selected + 1} · {viewing.hash}
+                  {selected === head && <span className="ml-2 text-mint">HEAD</span>}
+                </p>
+                {base !== null ? (
+                  <Link href={versionLink(selected + 1)} className="label-mono link-hover text-secondary">
+                    프롬프트 보기
                   </Link>
-                )
-              )}
-            </div>
+                ) : (
+                  selected > 0 && (
+                    <Link href={versionLink(selected + 1, `&diff=${selected}`)} className="label-mono link-hover text-mint">
+                      변경 사항 보기
+                    </Link>
+                  )
+                )}
+              </div>
+            )}
             <PromptBlock label="Prompt" text={viewing.prompt} />
           </div>
         )}
@@ -222,42 +225,44 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
           </section>
         )}
 
-        <section>
-          <h2 className="label-mono border-b border-frame pb-3 text-secondary">History · {commits.length} commits</h2>
-          <ol className="mt-4 space-y-3 border-l border-purple-rule pl-4">
-            {commits
-              .map((commit, i) => ({ commit, i }))
-              .reverse()
-              .map(({ commit, i }) => (
-                <li key={commit.id}>
-                  <Link
-                    href={versionLink(i + 1)}
-                    className={`block rounded-tile border px-4 py-3 transition-colors duration-150 ${
-                      i === selected && !editing ? "border-mint" : "border-frame hover:border-secondary"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="label-mono text-secondary">
-                          v{i + 1} · {commit.hash} · {formatTime(commit.createdAt)}
-                        </p>
-                        <p className="mt-1.5 break-words text-[15px] font-bold">{commit.message}</p>
+        {isOwner && (
+          <section>
+            <h2 className="label-mono border-b border-frame pb-3 text-secondary">History · {commits.length} commits</h2>
+            <ol className="mt-4 space-y-3 border-l border-purple-rule pl-4">
+              {commits
+                .map((commit, i) => ({ commit, i }))
+                .reverse()
+                .map(({ commit, i }) => (
+                  <li key={commit.id}>
+                    <Link
+                      href={versionLink(i + 1)}
+                      className={`block rounded-tile border px-4 py-3 transition-colors duration-150 ${
+                        i === selected && !editing ? "border-mint" : "border-frame hover:border-secondary"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="label-mono text-secondary">
+                            v{i + 1} · {commit.hash} · {formatTime(commit.createdAt)}
+                          </p>
+                          <p className="mt-1.5 break-words text-[15px] font-bold">{commit.message}</p>
+                        </div>
+                        {commit.image && (
+                          <Image
+                            src={commit.image.src}
+                            alt=""
+                            width={44}
+                            height={44}
+                            className="size-11 shrink-0 rounded-img border border-frame object-cover"
+                          />
+                        )}
                       </div>
-                      {commit.image && (
-                        <Image
-                          src={commit.image.src}
-                          alt=""
-                          width={44}
-                          height={44}
-                          className="size-11 shrink-0 rounded-img border border-frame object-cover"
-                        />
-                      )}
-                    </div>
-                  </Link>
-                </li>
-              ))}
-          </ol>
-        </section>
+                    </Link>
+                  </li>
+                ))}
+            </ol>
+          </section>
+        )}
       </aside>
     </main>
   );
