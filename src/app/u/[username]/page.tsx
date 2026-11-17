@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FollowButton } from "@/components/FollowButton";
+import { FollowStats, followsView } from "@/components/FollowStats";
 import { PageHeading } from "@/components/PageHeading";
 import { RepoListItem } from "@/components/RepoListItem";
 import { getCurrentUser } from "@/lib/server/auth";
 import { listPublicRepos } from "@/lib/server/repos";
-import { followCounts, getUserByUsername, isFollowing } from "@/lib/server/social";
+import { followCounts, getUserByUsername, isFollowing, listFollows } from "@/lib/server/social";
 
 export default async function ProfilePage(props: PageProps<"/u/[username]">) {
   const { username } = await props.params;
@@ -16,6 +17,8 @@ export default async function ProfilePage(props: PageProps<"/u/[username]">) {
   const isSelf = viewer?.id === profile.id;
   const counts = followCounts(profile.id);
   const repos = listPublicRepos(profile.id);
+  const open = followsView((await props.searchParams).follows);
+  const base = `/u/${encodeURIComponent(profile.username)}`;
 
   return (
     <main className="mx-auto w-full max-w-[1300px] px-6 py-12 lg:px-12">
@@ -23,8 +26,14 @@ export default async function ProfilePage(props: PageProps<"/u/[username]">) {
         <div>
           <PageHeading eyebrow="Profile" title={`@${profile.username}`} className="break-all" />
           <p className="label-mono mt-4 text-secondary">
-            팔로워 <span className="text-white">{counts.followers}</span> · 팔로잉{" "}
-            <span className="text-white">{counts.following}</span>
+            <FollowStats
+              username={profile.username}
+              counts={counts}
+              open={open}
+              users={open ? listFollows(profile.id, open) : []}
+              href={(view) => (view ? `${base}?follows=${view}` : base)}
+              self={isSelf}
+            />
           </p>
         </div>
         {isSelf ? (

@@ -397,5 +397,30 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   check("[자동 결과] 이미지 없이 커밋 → ?autogen=1", r.status === 303 && /\?autogen=1$/.test(r.location ?? ""), r.location);
 }
 
+// ---- Followers / following in a modal
+{
+  const guest = new Browser();
+  const strip = (h) => h.replace(/<!-- -->/g, "");
+  let r = await alice.get("/me");
+  let t = strip(r.html);
+  check("[팔로우 모달] 마이페이지 탭에서 팔로워/팔로잉 제거", !/>팔로워 · \d/.test(t) && !/>팔로잉 · \d/.test(t) && t.includes("좋아요 · "));
+  check("[팔로우 모달] 아이디 밑 숫자가 모달 링크", r.html.includes('href="/me?follows=followers"') && r.html.includes('href="/me?follows=following"'));
+  check("[팔로우 모달] 평소엔 모달 없음", !r.html.includes('role="dialog"'));
+  r = await alice.get("/me?follows=followers");
+  t = strip(r.html);
+  check("[팔로우 모달] 팔로워 모달 + 목록", r.html.includes('role="dialog"') && r.html.includes('aria-modal="true"') && t.includes("@qa_alice · 팔로워") && t.includes("@qa_bob"));
+  check("[팔로우 모달] 닫기 링크 = /me", /href="\/me"[^>]*aria-label="닫기"|aria-label="닫기"[^>]*href="\/me"/.test(r.html));
+  r = await alice.get("/me?tab=likes&follows=following");
+  check("[팔로우 모달] 다른 탭에서 열면 닫을 때 탭 유지", /href="\/me\?tab=likes"[^>]*aria-label="닫기"|aria-label="닫기"[^>]*href="\/me\?tab=likes"/.test(r.html) && strip(r.html).includes("아직 팔로우하는 사람이 없어요."));
+  r = await alice.get("/me?tab=followers");
+  check("[팔로우 모달] 예전 ?tab=followers 링크는 모달로", r.html.includes('role="dialog"') && strip(r.html).includes("@qa_bob"));
+  r = await alice.get("/me?follows=nope");
+  check("[팔로우 모달] 잘못된 값은 모달 없음", r.status === 200 && !r.html.includes('role="dialog"'));
+  r = await guest.get("/u/qa_alice?follows=followers");
+  check("[팔로우 모달] 공개 프로필에서도 모달 (비로그인)", r.html.includes('role="dialog"') && strip(r.html).includes("@qa_bob") && r.html.includes('href="/u/qa_alice?follows=following"'));
+  r = await guest.get("/u/qa_carol?follows=following");
+  check("[팔로우 모달] 다른 사람 빈 목록 문구", strip(r.html).includes("아직 팔로우하는 사람이 없어요."));
+}
+
 console.log(`\n기능 QA: ${pass}개 통과, ${fail}개 실패`);
 process.exitCode = fail ? 1 : 0;
