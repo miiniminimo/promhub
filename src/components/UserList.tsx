@@ -1,12 +1,19 @@
 import Link from "next/link";
 import type { UserRef } from "@/lib/server/social";
 
-export function UserList({ users, empty }: { users: (UserRef & { since: string })[]; empty: string }) {
+type Props = { users: (UserRef & { since: string })[]; empty: string; compact?: boolean };
+
+/** People linking to their profiles; `compact` is the single-column variant used in modals. */
+export function UserList({ users, empty, compact = false }: Props) {
   if (users.length === 0) {
-    return <p className="mt-8 rounded-tile border border-frame px-6 py-12 text-center text-muted">{empty}</p>;
+    return (
+      <p className={`text-center text-muted ${compact ? "px-2 py-8" : "mt-8 rounded-tile border border-frame px-6 py-12"}`}>
+        {empty}
+      </p>
+    );
   }
   return (
-    <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className={compact ? "space-y-2" : "mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"}>
       {users.map((u) => (
         <li key={u.id}>
           <Link href={`/u/${u.username}`} className="group flex items-center gap-3 rounded-tile border border-frame p-3">

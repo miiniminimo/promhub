@@ -5,7 +5,7 @@ import { LikeButton } from "@/components/LikeButton";
 import { PageHeading } from "@/components/PageHeading";
 import { RepoListItem } from "@/components/RepoListItem";
 import { StyleTag } from "@/components/StyleTag";
-import { UserList } from "@/components/UserList";
+import { FollowStats, followsView } from "@/components/FollowStats";
 import { VisibilityToggle } from "@/components/VisibilityToggle";
 import { getPost } from "@/lib/posts";
 import { requireUser } from "@/lib/server/auth";
@@ -18,8 +18,6 @@ const TABS = [
   { value: "original", label: "내가 오픈한 프롬프트" },
   { value: "fork", label: "포크한 프롬프트" },
   { value: "likes", label: "좋아요" },
-  { value: "followers", label: "팔로워" },
-  { value: "following", label: "팔로잉" },
 ] as const;
 type Tab = (typeof TABS)[number]["value"];
 
@@ -52,23 +50,27 @@ function likedItems(userId: number): LikedItem[] {
 
 export default async function MyPage(props: PageProps<"/me">) {
   const user = await requireUser("/me");
-  const { tab } = await props.searchParams;
+  const { tab, follows } = await props.searchParams;
   const current: Tab = TABS.some((t) => t.value === tab) ? (tab as Tab) : "original";
+  // Followers/following live in a modal now; old ?tab=followers links open it.
+  const open = followsView(follows) ?? followsView(tab);
+  const href = (view: string | null) => {
+    const params = new URLSearchParams();
+    if (current !== "original") params.set("tab", current);
+    if (view) params.set("follows", view);
+    return params.size ? `/me?${params}` : "/me";
+  };
 
   const repos = listUserRepos(user.id);
   const originals = repos.filter((r) => !r.forkedLabel);
   const forks = repos.filter((r) => r.forkedLabel);
   const liked = likedItems(user.id);
-  const followers = listFollows(user.id, "followers");
-  const following = listFollows(user.id, "following");
   const counts = followCounts(user.id);
   const tests = testSummary(user.id);
   const tabCount: Record<Tab, number> = {
     original: originals.length,
     fork: forks.length,
     likes: liked.length,
-    followers: counts.followers,
-    following: counts.following,
   };
 
   return (
@@ -77,13 +79,14 @@ export default async function MyPage(props: PageProps<"/me">) {
         <div>
           <PageHeading eyebrow="My page" title={`@${user.username}`} className="break-all" />
           <p className="label-mono mt-4 text-secondary">
-            <Link href="/me?tab=followers" className="link-hover">
-              팔로워 <span className="text-white">{counts.followers}</span>
-            </Link>{" "}
-            ·{" "}
-            <Link href="/me?tab=following" className="link-hover">
-              팔로잉 <span className="text-white">{counts.following}</span>
-            </Link>{" "}
+            <FollowStats
+              username={user.username}
+              counts={counts}
+              open={open}
+              users={open ? listFollows(user.id, open) : []}
+              href={href}
+              self
+            />{" "}
             ·{" "}
             <Link href={`/u/${user.username}`} className="link-hover">
               공개 프로필 보기
@@ -187,9 +190,6 @@ export default async function MyPage(props: PageProps<"/me">) {
             ))}
           </ul>
         ))}
-
-      {current === "followers" && <UserList users={followers} empty="아직 나를 팔로우하는 사람이 없어요." />}
-      {current === "following" && <UserList users={following} empty="아직 팔로우하는 사람이 없어요." />}
     </main>
   );
 }
