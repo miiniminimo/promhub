@@ -30,8 +30,8 @@ type ChatMessage = {
   ready?: boolean;
   /** Target image model the agent wrote this draft for. */
   model?: string;
-  /** A rendered preview of draft v`version`. */
-  preview?: PreviewImage & { version: number };
+  /** A rendered preview of the draft called `label`. */
+  preview?: PreviewImage & { label: string };
 };
 
 const ACCEPT = "image/jpeg,image/png,image/gif,image/webp,application/pdf,.txt,.md,.json,.csv,.log,text/*";
@@ -60,18 +60,19 @@ function AttachmentChip({ file, onRemove }: { file: Attachment; onRemove?: () =>
 type DraftCardProps = {
   text: string;
   model?: string;
-  version: number;
+  /** "초안 v2" when creating, "현재 v3" / "수정안 1" when editing a saved version. */
+  label: string;
   ready: boolean;
   latest: boolean;
   /** Shown on the latest draft: renders it with the image model. */
   preview?: { onClick: () => void; busy: boolean; enabled: boolean };
 };
 
-function DraftCard({ text, model, version, ready, latest, preview }: DraftCardProps) {
+function DraftCard({ text, model, label, ready, latest, preview }: DraftCardProps) {
   return (
     <div className={`w-full max-w-[85%] rounded-tile border ${latest ? "border-mint" : "border-frame opacity-60"}`}>
       <p className="label-mono flex items-center gap-2 border-b border-frame px-4 py-2 text-secondary">
-        프롬프트 초안 v{version}
+        {label}
         {latest && <span className="text-mint">{ready ? "● 완성" : "최신"}</span>}
         {model && <span className="ml-auto font-normal normal-case">{model}</span>}
       </p>
@@ -105,14 +106,14 @@ function DraftCard({ text, model, version, ready, latest, preview }: DraftCardPr
 }
 
 /** A rendered preview in the chat, which the user can pick as the new repo's result image. */
-function PreviewBubble({ image, chosen, onChoose }: { image: PreviewImage & { version: number }; chosen: boolean; onChoose: () => void }) {
+function PreviewBubble({ image, chosen, onChoose }: { image: PreviewImage & { label: string }; chosen: boolean; onChoose: () => void }) {
   return (
     <figure className={`w-full max-w-[85%] rounded-tile border p-2 ${chosen ? "border-mint" : "border-frame"}`}>
       {/* eslint-disable-next-line @next/next/no-img-element -- just-generated upload, already sized */}
-      <img src={image.src} alt={`초안 v${image.version} 미리보기`} width={image.width} height={image.height} className="h-auto w-full rounded-[14px]" />
+      <img src={image.src} alt={`${image.label} 미리보기`} width={image.width} height={image.height} className="h-auto w-full rounded-[14px]" />
       <figcaption className="flex flex-wrap items-center gap-3 px-2 pb-1 pt-2.5">
         <span className="label-mono font-normal text-secondary">
-          초안 v{image.version} 미리보기 · {image.model}
+          {image.label} 미리보기 · {image.model}
         </span>
         <button
           type="button"
@@ -137,17 +138,34 @@ function fillIfEmpty(form: HTMLFormElement, name: string, value: string) {
   return true;
 }
 
+/** Editing a saved version: the chat starts from its prompt, with the repo's style and model fixed. */
+export type ComposerEdit = { base: string; style: Style; model: string; version: number };
+
+type ComposerProps = {
+  previewEnabled: boolean;
+  edit?: ComposerEdit;
+  /** Called with the current draft and whether a preview is picked as the result image. */
+  onChange?: (prompt: string, hasPreview: boolean) => void;
+};
+
+/** The agent's opening turn in edit mode, holding the saved prompt as its "draft". */
+function editOpening({ base, style, model, version }: ComposerEdit): ChatMessage {
+  const reply = `지금 v${version} 프롬프트예요. 바꾸고 싶은 부분을 말씀해 주세요. (예: 머리색을 은발로, 배경을 밤으로)`;
+  const raw = JSON.stringify({ reply, prompt: base, ready: true, title: "", model, references: [] });
+  return { role: "assistant", text: reply, raw, agent: style, draft: base, ready: true, model };
+}
+
 /**
- * Builds the New Prompt form's prompt through a chat with the style agent matching the
- * selected style. Each reply that changes the prompt shows the new draft inside the chat
- * (changes are requested by chatting); the latest draft is submitted via a hidden input.
+ * Builds a prompt through a chat with the style agent: on the New Prompt form (style picked in
+ * the form) or, with `edit`, to revise a saved version. Each reply that changes the prompt shows
+ * the new draft inside the chat; the latest draft is submitted via a hidden input.
  */
-export function PromptComposer({ previewEnabled }: { previewEnabled: boolean }) {
-  const [prompt, setPrompt] = useState("");
+export function PromptComposer({ previewEnabled, edit, onChange }: ComposerProps) {
+  const [prompt, setPrompt] = useState(edit?.base ?? "");
   // Target model per style agent: the agent's pick (users can ask for another one in the chat).
-  const [models, setModels] = useState<Partial<Record<Style, string>>>({});
-  const [style, setStyle] = useState<Style>("anime");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [models, setModels] = useState<Partial<Record<Style, string>>>(edit ? { [edit.style]: edit.model } : {});
+  const [style, setStyle] = useState<Style>(edit?.style ?? "anime");
+  const [messages, setMessages] = useState<ChatMessage[]>(edit ? [editOpening(edit)] : []);
   const [input, setInput] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(0);
@@ -156,21 +174,23 @@ export function PromptComposer({ previewEnabled }: { previewEnabled: boolean }) 
   const [remaining, setRemaining] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
   const [previewing, startPreview] = useTransition();
-  const [chosen, setChosen] = useState<(PreviewImage & { version: number }) | null>(null);
+  const [chosen, setChosen] = useState<(PreviewImage & { label: string }) | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const agent = AGENTS[style];
   const model = models[style] ?? "";
 
   // Follow the style radio in the surrounding form: it picks which agent answers next.
+  // (In edit mode the repo's style is fixed.)
+  const editing = !!edit;
   useEffect(() => {
     const form = rootRef.current?.closest("form");
-    if (!form) return;
+    if (!form || editing) return;
     const sync = () => setStyle((String(new FormData(form).get("style") ?? "anime") as Style));
     sync();
     form.addEventListener("change", sync);
     return () => form.removeEventListener("change", sync);
-  }, []);
+  }, [editing]);
 
   async function addFiles(files: FileList | File[]) {
     setError(null);
@@ -196,7 +216,7 @@ export function PromptComposer({ previewEnabled }: { previewEnabled: boolean }) 
     const files = attachments;
     // The style comes from the surrounding form; the title is filled into it below.
     const form = rootRef.current?.closest("form");
-    const context = { model, style };
+    const context = { model, style, ...(edit && { base: edit.base }) };
     // Preview bubbles are UI only; the agent sees the conversation and its own drafts.
     const history = messages.filter((m) => !m.preview).map((m) => ({
       role: m.role,
@@ -224,9 +244,12 @@ export function PromptComposer({ previewEnabled }: { previewEnabled: boolean }) 
       }
       const { result } = res;
       setRemaining(res.remainingToday);
+      // New prompt: the agent's title fills the form. Edit: the first request becomes the commit message.
       const filled = form
         ? [
-            fillIfEmpty(form, "title", result.title) && "제목",
+            edit
+              ? fillIfEmpty(form, "message", text.slice(0, 80)) && "커밋 메시지를"
+              : fillIfEmpty(form, "title", result.title) && "제목을",
           ].filter((f): f is string => !!f)
         : [];
       setMessages((prev) => [
@@ -250,15 +273,18 @@ export function PromptComposer({ previewEnabled }: { previewEnabled: boolean }) 
   }
 
   const draftCount = messages.filter((m) => m.draft).length;
+  const draftLabel = (n: number) => (edit ? (n === 1 ? `현재 v${edit.version}` : `수정안 ${n - 1}`) : `초안 v${n}`);
+
+  useEffect(() => onChange?.(prompt, !!chosen), [onChange, prompt, chosen]);
 
   function preview() {
     if (!prompt || previewing) return;
-    const version = draftCount;
+    const label = draftLabel(draftCount);
     setError(null);
     startPreview(async () => {
       const res = await generatePreviewAction(prompt, style);
       if (!res.ok) return setError(res.error);
-      setMessages((prev) => [...prev, { role: "assistant", text: "", preview: { ...res.image, version } }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: "", preview: { ...res.image, label } }]);
       requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
     });
   }
@@ -275,7 +301,7 @@ export function PromptComposer({ previewEnabled }: { previewEnabled: boolean }) 
 
       <div className="flex items-end justify-between gap-4 border-b border-frame pb-3">
         <span className="label-mono text-secondary">프롬프트 *</span>
-        <span className="label-mono text-mint">AI 에이전트와 대화로 만들기</span>
+        <span className="label-mono text-mint">{edit ? "AI 에이전트와 대화로 수정하기" : "AI 에이전트와 대화로 만들기"}</span>
       </div>
 
       <div className="mt-4">
@@ -354,7 +380,7 @@ export function PromptComposer({ previewEnabled }: { previewEnabled: boolean }) 
                   {m.draft && (
                     <DraftCard
                       text={m.draft}
-                      version={messages.slice(0, i + 1).filter((x) => x.draft).length}
+                      label={draftLabel(messages.slice(0, i + 1).filter((x) => x.draft).length)}
                       model={m.model}
                       ready={!!m.ready}
                       preview={
@@ -388,13 +414,13 @@ export function PromptComposer({ previewEnabled }: { previewEnabled: boolean }) 
                     </div>
                   )}
                   {m.filled && m.filled.length > 0 && (
-                    <p className="text-xs text-secondary">✓ {m.filled.join(", ")}을(를) 채웠어요</p>
+                    <p className="text-xs text-secondary">✓ {m.filled.join(", ")} 채웠어요</p>
                   )}
                 </div>
               );
             })}
             {pending && <p className="label-mono text-secondary">{agent.name}가 참고 자료를 찾고 프롬프트를 다듬는 중…</p>}
-            {previewing && <p className="label-mono text-secondary">초안 v{draftCount}로 이미지를 그리는 중… (10~30초)</p>}
+            {previewing && <p className="label-mono text-secondary">{draftLabel(draftCount)}로 이미지를 그리는 중… (10~30초)</p>}
           </div>
           {error && <p className="whitespace-pre-line border-t border-frame px-4 py-2 text-sm text-tile-pink">{error}</p>}
           {(attachments.length > 0 || uploading > 0) && (
@@ -455,7 +481,8 @@ export function PromptComposer({ previewEnabled }: { previewEnabled: boolean }) 
           {/* eslint-disable-next-line @next/next/no-img-element -- the user's own generated preview */}
           <img src={chosen.src} alt="" className="size-12 rounded-img object-cover" />
           <p className="text-sm text-muted">
-            초안 v{chosen.version} 미리보기를 <span className="text-mint">v1 결과 이미지</span>로 저장해요 ·{" "}
+            {chosen.label} 미리보기를 <span className="text-mint">{edit ? "새 버전의 결과 이미지" : "v1 결과 이미지"}</span>로
+            저장해요 ·{" "}
             <span className="text-secondary">{chosen.model}</span>
           </p>
           <button type="button" onClick={() => setChosen(null)} className="label-mono link-hover ml-auto text-secondary">

@@ -10,7 +10,7 @@ import type {
 } from "openai/resources/responses/responses";
 import { AGENTS } from "../agents";
 import { SAFE_IMAGE_TYPES } from "../image-types";
-import { joinNegative, usesNegativePrompt } from "../prompt-format";
+import { joinNegative, splitNegative, usesNegativePrompt } from "../prompt-format";
 import { styleOf } from "../styles";
 import type { Style } from "../types";
 import type { ChatFile } from "./repos";
@@ -22,7 +22,12 @@ import { popularInStyle, searchPromHub } from "./search";
  */
 export type BuilderTurn = { role: "user" | "assistant"; content: string; files?: ChatFile[] };
 
-export type BuilderContext = { model: string; style: Style };
+export type BuilderContext = {
+  model: string;
+  style: Style;
+  /** Editing a saved version: its prompt, which the agent changes only where asked. */
+  base?: string;
+};
 
 export type Reference = { title: string; url: string };
 
@@ -65,6 +70,16 @@ How to work:
 Attachments:
 - Image attachments are references: describe their visual style precisely in the prompt so the target model can reproduce it. Don't name real people.
 - Text or PDF attachments are usually chat logs or notes: find the prompts the user actually used (or the requirements they describe) and consolidate them into one improved prompt. Say briefly in reply what you extracted.`;
+
+/** Extra instructions when the chat edits an already-saved version instead of starting fresh. */
+const editSystem = (base: string) => `Editing mode: the user is revising a prompt already saved in their repository. Its current version is:
+"""
+${base}
+"""
+- Start from this prompt (or from your latest draft in this conversation) and apply only the changes the user asks for; keep every other part, the order and the Negative prompt line as they are.
+- Don't search for references unless the user asks. title: return "". model: keep the context line's model.
+- reply: say in one or two Korean sentences what you changed, e.g. "머리색을 은발로 바꿨어요."
+- Set ready to true whenever the draft is usable.`;
 
 const AGENT_SYSTEM: Record<Style, string> = {
   anime: `You are the ANIME agent: an expert in anime / manga character art.
@@ -195,7 +210,7 @@ export async function buildPrompt(
 
   const params: Omit<ResponseCreateParamsNonStreaming, "input"> = {
     model: MODEL,
-    instructions: `${BASE_SYSTEM}\n\n${AGENT_SYSTEM[ctx.style]}`,
+    instructions: [BASE_SYSTEM, AGENT_SYSTEM[ctx.style], ctx.base && editSystem(ctx.base)].filter(Boolean).join("\n\n"),
     tools: [SEARCH_TOOL],
     text: { format: { type: "json_schema", name: "prompt_draft", schema: OUTPUT_SCHEMA, strict: true } },
     max_output_tokens: 8000,
@@ -400,6 +415,7 @@ function fileNotes(file: ChatFile): string[] {
 }
 
 function demoBuild(history: BuilderTurn[], message: string, files: ChatFile[], ctx: BuilderContext): BuilderResult {
+  if (ctx.base) return demoEdit(history, message, files, ctx, ctx.base);
   const style = OFFLINE[ctx.style];
   const model = ctx.model || AGENTS[ctx.style].defaultModel;
   const userTurns = [...history.filter((t) => t.role === "user"), { role: "user" as const, content: message, files }];
@@ -424,7 +440,7 @@ function demoBuild(history: BuilderTurn[], message: string, files: ChatFile[], c
 
   const ready = turn >= 2;
   const reply = ready
-    ? "완성됐어요! 오른쪽 초안을 확인하고 저장소를 만들면 돼요. 더 바꾸고 싶은 부분이 있으면 말씀해 주세요."
+    ? "완성됐어요! 위 초안을 확인하고 저장소를 만들면 돼요. 더 바꾸고 싶은 부분이 있으면 말씀해 주세요."
     : `${turn > 0 ? "반영했어요. " : ""}${style.questions.at(turn)}`;
   return result(
     {
@@ -434,6 +450,30 @@ function demoBuild(history: BuilderTurn[], message: string, files: ChatFile[], c
       title: script?.title ?? first.slice(0, 40),
       model,
       references,
+    },
+    ctx,
+    "demo",
+  );
+}
+
+/** Offline editing: the saved prompt plus the English phrases of every request so far. */
+function demoEdit(history: BuilderTurn[], message: string, files: ChatFile[], ctx: BuilderContext, base: string): BuilderResult {
+  const userTurns = [...history.filter((t) => t.role === "user"), { role: "user" as const, content: message, files }];
+  const { prompt, negative } = splitNegative(base);
+  const added = [
+    ...new Set([...userTurns.flatMap((t) => toEnglish(t.content)), ...userTurns.flatMap((t) => (t.files ?? []).flatMap(fileNotes))]),
+  ].filter((p) => !prompt.toLowerCase().includes(p.toLowerCase()));
+  const body = added.length ? `${prompt}, ${added.join(", ")}` : prompt;
+  return result(
+    {
+      reply: added.length
+        ? `${added.join(", ")} 을(를) 반영했어요. 더 바꿀 부분이 있으면 말씀해 주세요.`
+        : "바꿀 부분을 조금 더 구체적으로 말씀해 주세요. (예: 머리색을 은발로, 배경을 밤으로)",
+      prompt: joinNegative(body, negative),
+      ready: true,
+      title: "",
+      model: ctx.model || AGENTS[ctx.style].defaultModel,
+      references: [],
     },
     ctx,
     "demo",
