@@ -77,7 +77,7 @@ export default async function MyPage(props: PageProps<"/me">) {
     <main className="mx-auto w-full max-w-[1300px] px-6 py-12 lg:px-12">
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div>
-          <PageHeading eyebrow="My page" title={`@${user.username}`} className="break-all" />
+          <PageHeading title={`@${user.username}`} className="break-all" />
           <p className="label-mono mt-4 text-secondary">
             <FollowStats
               username={user.username}
