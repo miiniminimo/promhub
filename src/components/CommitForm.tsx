@@ -6,7 +6,6 @@ import { commitAction } from "@/app/actions";
 import type { Style } from "@/lib/types";
 import { PromptComposer } from "./PromptComposer";
 import { ResultImageInput } from "./ResultImageInput";
-import { fieldClass } from "./ui";
 
 type Props = { repoId: number; prompt: string; style: Style; model: string; version: number; previewEnabled: boolean };
 
@@ -26,10 +25,6 @@ export function CommitForm({ repoId, prompt: base, style, model, version, previe
     <form action={action} className="space-y-5">
       <input type="hidden" name="repoId" value={repoId} />
       <PromptComposer previewEnabled={previewEnabled} edit={{ base, style, model, version }} onChange={onChange} />
-      <label className="block">
-        <span className="label-mono text-secondary">Commit message</span>
-        <input name="message" placeholder="예: 조명을 golden hour 로 변경" className={`${fieldClass} mt-2`} />
-      </label>
       <ResultImageInput label="결과 이미지 직접 올리기 (선택, 5MB 이하 — 올리면 채팅 미리보기 대신 사용)" onChange={setHasFile} />
       {state?.error && <p className="text-sm text-muted">{state.error}</p>}
       <div className="flex items-center gap-3">

@@ -115,12 +115,14 @@ export async function commitAction(_: FormState, formData: FormData): Promise<Fo
     if (preview) image = { ...preview.image, ...(preview.model && { generatedBy: preview.model }) };
   }
   // A new result image alone is a valid version (same prompt, new output).
-  if (!image && prompt === getCommits(repoId).at(-1)?.prompt.replace(/\r\n?/g, "\n").trim()) {
+  const headPrompt = getCommits(repoId).at(-1)?.prompt.replace(/\r\n?/g, "\n").trim();
+  if (!image && prompt === headPrompt) {
     return { error: "이전 버전과 달라진 내용이 없습니다." };
   }
 
   addCommit(repoId, {
-    message: String(formData.get("message") ?? "").trim() || "Update prompt",
+    // Normally the chat requests; a version that only adds a result image gets a default.
+    message: String(formData.get("message") ?? "").trim().slice(0, 200) || (prompt === headPrompt ? "결과 이미지 추가" : "프롬프트 수정"),
     prompt,
     image,
   });
