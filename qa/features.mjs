@@ -138,7 +138,7 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   r = await bob.submit(`/repos/${own.id}?edit=1`, 'name="repoId"', { repoId: String(repo), prompt: "x", message: "hack-img", image: PNG });
   check("[결과이미지] 남의 저장소에 이미지 커밋 차단", head().message !== "hack-img");
   r = await alice.get(`/repos/${repo}?edit=1`);
-  check("[결과이미지] 커밋 폼에 이미지 입력", r.html.includes('name="image"') && r.html.includes("이 버전의 결과 이미지"));
+  check("[결과이미지] 커밋 폼에 이미지 입력", r.html.includes('name="image"') && r.html.includes("결과 이미지 직접 올리기"));
   r = await get("/");
   check("[결과이미지] 피드 카드가 최신 결과 이미지로", r.html.includes(`src="${img.src}"`));
 }
@@ -438,6 +438,44 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   const repo = db().prepare("select id from repos where name='qa-neon-fox'").get().id;
   r = await bob.get(`/repos/${repo}`);
   check("[작성자] PromHub 저장소 작성자 → /u/ 페이지", r.html.includes('href="/u/qa_alice"'));
+}
+
+// ---- Editing a version by chatting
+{
+  const { readdirSync, readFileSync: read } = await import("node:fs");
+  const js = readdirSync(".next/static", { recursive: true }).filter((f) => f.endsWith(".js")).map((f) => read(`.next/static/${f}`, "utf8")).join("\n");
+  const chatId = js.match(/\("([0-9a-f]{40,})",[^)]{0,80}"chatPromptBuilder"/)?.[1];
+  const repo = db().prepare("select id from repos where name='qa-neon-fox'").get().id;
+  const head = () => db().prepare("select id, message, prompt, image_json j from commits where repo_id=? order by id desc limit 1").get(repo);
+  const n = db().prepare("select count(*) c from commits where repo_id=?").get(repo).c;
+  let r = await alice.get(`/repos/${repo}?edit=1`);
+  const t = r.html.replace(/<!-- -->/g, "");
+  check("[대화 수정] 수정 화면 = 채팅 (텍스트 입력칸 없음)", t.includes("AI 에이전트와 대화로 수정하기") && !r.html.includes('<textarea name="prompt"') && r.html.includes('placeholder="메시지 입력'));
+  check("[대화 수정] 현재 버전이 첫 초안으로", t.includes(`지금 v${n} 프롬프트예요`) && t.includes(`현재 v${n}`));
+  check("[대화 수정] 저장값 = 현재 프롬프트, 바뀌기 전엔 커밋 비활성", r.html.includes(`name="prompt" value="${head().prompt.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}"`) && /<button type="submit" disabled=""[^>]*>커밋/.test(r.html));
+  const chat = async (context) => {
+    const res = await fetch(BASE + `/repos/${repo}`, { method: "POST", headers: { cookie: alice.cookie, "Next-Action": chatId, "Content-Type": "text/plain;charset=UTF-8", Accept: "text/x-component" },
+      body: JSON.stringify([[], "배경을 밤으로 바꿔줘", [], context]) });
+    return res.text();
+  };
+  const base = head().prompt;
+  let out = await chat({ model: "Flux.1 D", style: "illustration", base });
+  const sent = readFileSync(process.env.OPENAI_LOG, "utf8").split("\n").filter((l) => l.includes("/responses")).at(-1) ?? "";
+  check("[대화 수정] AI 에 수정 모드 + 현재 프롬프트 전달", out.includes('"ok":true') && sent.includes("Editing mode") && sent.includes(base.split("\n")[0].slice(0, 40)), sent.slice(0, 100));
+  out = await chat({ model: "Flux.1 D", style: "illustration", base: "x".repeat(4001) });
+  check("[대화 수정] 너무 긴 base 거부", out.includes("수정할 프롬프트가 올바르지 않아요"));
+  out = await chat({ model: "Flux.1 D", style: "illustration" });
+  const plain = readFileSync(process.env.OPENAI_LOG, "utf8").split("\n").filter((l) => l.includes("/responses")).at(-1) ?? "";
+  check("[대화 수정] 새 프롬프트 대화엔 수정 모드 없음", out.includes('"ok":true') && !plain.includes("Editing mode"));
+  // Commit the chat result with a picked preview as its result image.
+  const img = `/api/images/${db().prepare("select id from images where owner_id=(select id from users where username='qa_alice') order by id limit 1").get().id}`;
+  r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: base + ", night sky", message: "배경을 밤으로", previewImage: img, previewWidth: "1024", previewHeight: "1024", previewModel: "gpt-image-1-mini" });
+  const c = head(); const ci = JSON.parse(c.j ?? "null");
+  check("[대화 수정] 커밋 + 고른 미리보기가 새 버전 결과 이미지", r.status === 303 && c.message === "배경을 밤으로" && c.prompt.endsWith("night sky") && ci?.src === img && ci?.generatedBy === "gpt-image-1-mini" && !/autogen/.test(r.location ?? ""), r.location);
+  r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: c.prompt, message: "같은 프롬프트 + 미리보기", previewImage: img });
+  check("[대화 수정] 프롬프트 그대로여도 미리보기만으로 새 버전", r.status === 303 && head().message === "같은 프롬프트 + 미리보기");
+  r = await bob.submit(`/repos/${db().prepare("select id from repos where owner_id=(select id from users where username='qa_bob') limit 1").get().id}?edit=1`, 'name="repoId"', { prompt: "x", message: "남의 미리보기", previewImage: img });
+  check("[대화 수정] 남의 미리보기 이미지로 커밋 거부", r.html.includes("미리보기 이미지를 찾을 수 없습니다"));
 }
 
 console.log(`\n기능 QA: ${pass}개 통과, ${fail}개 실패`);

@@ -12,7 +12,7 @@ const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(H, 4
 const png = Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
 createServer((req, res) => {
   let body = ""; req.on("data", (d) => (body += d)); req.on("end", () => {
-    console.log(req.method, req.url, body.slice(0, 300).replace(/\s+/g, " "));
+    console.log(req.method, req.url, body.slice(0, 20000).replace(/\s+/g, " "));
     res.setHeader("content-type", "application/json");
     if (req.url.endsWith("/images/generations")) return res.end(JSON.stringify({ created: 1, data: [{ b64_json: png.toString("base64") }] }));
     if (req.url.endsWith("/responses")) {

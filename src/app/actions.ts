@@ -106,8 +106,14 @@ export async function commitAction(_: FormState, formData: FormData): Promise<Fo
   const prompt = normalizePrompt(formData.get("prompt"));
   if (!prompt) return { error: "프롬프트를 입력해주세요." };
 
-  const image = await uploadedResult(repo.ownerId, formData);
+  // A directly uploaded file wins over a preview picked in the chat.
+  let image = await uploadedResult(repo.ownerId, formData);
   if (typeof image === "string") return { error: image };
+  if (!image) {
+    const preview = chosenPreview(repo.ownerId, formData);
+    if (typeof preview === "string") return { error: preview };
+    if (preview) image = { ...preview.image, ...(preview.model && { generatedBy: preview.model }) };
+  }
   // A new result image alone is a valid version (same prompt, new output).
   if (!image && prompt === getCommits(repoId).at(-1)?.prompt.replace(/\r\n?/g, "\n").trim()) {
     return { error: "이전 버전과 달라진 내용이 없습니다." };
@@ -390,6 +396,9 @@ export async function chatPromptBuilder(
   if (!message.trim() && fileIds.length === 0) return { ok: false, error: "메시지를 입력하거나 파일을 첨부해주세요." };
   if (fileIds.length > MAX_FILES_PER_TURN) return { ok: false, error: `한 번에 최대 ${MAX_FILES_PER_TURN}개까지 첨부할 수 있습니다.` };
   if (!isStyle(context.style)) return { ok: false, error: "스타일을 선택해주세요." };
+  if (context.base !== undefined && (typeof context.base !== "string" || context.base.length > MAX_PREVIEW_PROMPT)) {
+    return { ok: false, error: "수정할 프롬프트가 올바르지 않아요." };
+  }
   // Every turn may call the paid model API, so each user gets a per-minute and daily budget.
   const limit = takeRateLimit(user.id, "ai_chat", "AI");
   if (!limit.ok) return limit;

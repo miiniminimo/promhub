@@ -104,7 +104,14 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section>
           {editing ? (
-            <CommitForm repoId={repo.id} prompt={commits[head].prompt} />
+            <CommitForm
+              repoId={repo.id}
+              prompt={commits[head].prompt}
+              style={repo.style}
+              model={repo.model}
+              version={head + 1}
+              previewEnabled={previewAvailable()}
+            />
           ) : (
             <div className="space-y-4">
               <div className="flex min-h-9 flex-wrap items-center justify-between gap-4">
