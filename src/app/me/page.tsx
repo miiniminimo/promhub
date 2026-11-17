@@ -37,7 +37,7 @@ function likedItems(userId: number): LikedItem[] {
     if (kind === "post") {
       const post = getPost(targetId);
       if (!post) return [];
-      const meta = `@${post.author} · ${post.model} · Civitai`;
+      const meta = `@${post.author} · ${post.model}`;
       return [{ kind, id: targetId, href: `/p/${post.id}`, title: post.title, meta, style: post.style, cover: post.images[0] }];
     }
     const repo = getRepo(Number(targetId), userId);

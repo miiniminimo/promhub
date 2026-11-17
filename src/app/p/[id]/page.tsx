@@ -5,7 +5,7 @@ import { ForkButton } from "@/components/ForkButton";
 import { LikeButton } from "@/components/LikeButton";
 import { PromptBlock } from "@/components/PromptBlock";
 import { StyleTag } from "@/components/StyleTag";
-import { getPost } from "@/lib/posts";
+import { civitaiProfileUrl, getPost } from "@/lib/posts";
 import { joinNegative } from "@/lib/prompt-format";
 import { getCurrentUser } from "@/lib/server/auth";
 import { likeInfo } from "@/lib/server/social";
@@ -45,7 +45,10 @@ export default async function PostPage(props: PageProps<"/p/[id]">) {
           <StyleTag style={post.style} />
           <h1 className="mt-3 text-[28px] font-bold leading-tight">{post.title}</h1>
           <p className="label-mono mt-3 font-normal text-secondary">
-            @{post.author} · Civitai ♥ {post.likes.toLocaleString()} · {post.createdAt.slice(0, 10)}
+            <a href={civitaiProfileUrl(post.author)} target="_blank" rel="noreferrer" className="link-hover">
+              @{post.author}
+            </a>{" "}
+            · ♥ {post.likes.toLocaleString()} · {post.createdAt.slice(0, 10)}
           </p>
         </div>
 
