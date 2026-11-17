@@ -301,5 +301,41 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   r = await preview(null, "a cat", "photo"); check("[미리보기] 비로그인 → 로그인", r.status === 303 || r.redirect.includes("/login"), `status ${r.status}`);
 }
 
+// ---- Saving a picked preview as the v1 result image
+{
+  const { readdirSync, readFileSync: read } = await import("node:fs");
+  const js = readdirSync(".next/static", { recursive: true }).filter((f) => f.endsWith(".js")).map((f) => read(`.next/static/${f}`, "utf8")).join("\n");
+  const createId = js.match(/\("([0-9a-f]{40,})",[^)]{0,80}"createRepoAction"/)?.[1];
+  const create = async (who, fields) => {
+    const body = new FormData();
+    for (const [k, v] of Object.entries(fields)) body.set(`_1_${k}`, v);
+    body.set("0", '["$undefined","$K1"]');
+    const res = await fetch(BASE + "/new", { method: "POST", redirect: "manual", headers: { cookie: who.cookie, "Next-Action": createId, Accept: "text/x-component" }, body });
+    const redirect = res.headers.get("x-action-redirect") ?? "";
+    return { id: Number(redirect.match(/\/repos\/(\d+)/)?.[1]), text: await res.text() };
+  };
+  const repo = (id) => db().prepare("select model, cover_json c from repos where id=?").get(id);
+  const v1 = (id) => JSON.parse(db().prepare("select image_json j from commits where repo_id=? order by id limit 1").get(id)?.j ?? "null");
+  const aliceImg = db().prepare("select id from images where owner_id=(select id from users where username='qa_alice') order by id limit 1").get().id;
+  const src = `/api/images/${aliceImg}`;
+  const base = { title: "미리보기 저장", style: "photo", prompt: "a cat on a roof", model: "Flux.1 D", visibility: "private" };
+  let r = await create(alice, { ...base, previewImage: src, previewWidth: "1024", previewHeight: "1024", previewModel: "gpt-image-1-mini" });
+  check("[미리보기 저장] 고른 미리보기 → v1 결과 + 대표 이미지", v1(r.id)?.src === src && JSON.parse(repo(r.id).c).src === src, r.text.slice(-100));
+  check("[미리보기 저장] 모델 = 미리보기 모델", repo(r.id).model === "gpt-image-1-mini");
+  check("[미리보기 저장] 크기 저장", v1(r.id)?.width === 1024 && v1(r.id)?.height === 1024);
+  r = await create(alice, { ...base, previewImage: src, previewWidth: "abc", previewHeight: "999999", previewModel: "" });
+  check("[미리보기 저장] 이상한 크기 보정 + 모델 비면 AI 모델 유지", v1(r.id)?.width === 1024 && v1(r.id)?.height === 10000 && repo(r.id).model === "Flux.1 D");
+  r = await create(alice, { ...base, previewImage: src, previewModel: "gpt-image-1-mini", image: PNG, imageWidth: "1", imageHeight: "1" });
+  check("[미리보기 저장] 직접 올린 파일이 우선", v1(r.id)?.src !== src && v1(r.id)?.width === 1 && repo(r.id).model === "Flux.1 D");
+  r = await create(bob, { ...base, previewImage: src, previewModel: "gpt-image-1-mini" });
+  check("[미리보기 저장] 남의 이미지 선택 거부", !r.id && r.text.includes("미리보기 이미지를 찾을 수 없습니다"));
+  for (const bad of ["https://example.com/x.png", "/api/images/999999", "/api/images/1/../2", "javascript:alert(1)"]) {
+    r = await create(alice, { ...base, previewImage: bad });
+    check(`[미리보기 저장] 잘못된 src 거부: ${bad}`, !r.id && r.text.includes("미리보기 이미지를 찾을 수 없습니다"));
+  }
+  r = await create(alice, base);
+  check("[미리보기 저장] 미리보기 없이도 저장 (이미지 없음)", !!r.id && v1(r.id) === null);
+}
+
 console.log(`\n기능 QA: ${pass}개 통과, ${fail}개 실패`);
 process.exitCode = fail ? 1 : 0;
