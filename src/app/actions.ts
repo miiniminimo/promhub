@@ -145,8 +145,21 @@ async function uploadedResult(ownerId: number, formData: FormData): Promise<Post
   if (!(file instanceof File) || file.size === 0) return null;
   const imageId = await storeImage(ownerId, file);
   if (typeof imageId === "string") return imageId;
-  const size = (key: string) => Math.min(Math.max(Math.round(Number(formData.get(key))) || 1024, 1), 10000);
-  return { src: `/api/images/${imageId}`, width: size("imageWidth"), height: size("imageHeight") };
+  return { src: `/api/images/${imageId}`, width: clampSize(formData.get("imageWidth")), height: clampSize(formData.get("imageHeight")) };
+}
+
+const clampSize = (value: FormDataEntryValue | null) => Math.min(Math.max(Math.round(Number(value)) || 1024, 1), 10000);
+
+/** The chat preview picked as the result image: must be an image this user generated/uploaded. */
+function chosenPreview(ownerId: number, formData: FormData): { image: PostImage; model: string } | null | string {
+  const src = String(formData.get("previewImage") ?? "").trim();
+  if (!src) return null;
+  const id = src.match(UPLOADED_IMAGE)?.[1];
+  if (!id || imageOwner(Number(id)) !== ownerId) return "선택한 미리보기 이미지를 찾을 수 없습니다.";
+  return {
+    image: { src, width: clampSize(formData.get("previewWidth")), height: clampSize(formData.get("previewHeight")) },
+    model: String(formData.get("previewModel") ?? "").trim().slice(0, 60),
+  };
 }
 
 export async function createRepoAction(_: FormState, formData: FormData): Promise<FormState> {
@@ -159,10 +172,20 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
   if (!prompt) return { error: "AI와 대화해서 프롬프트를 먼저 만들어주세요." };
   if (!isStyle(style)) return { error: "스타일을 선택해주세요." };
   // The agent picks the target model; fall back to the style's default if none came through.
-  const model = String(formData.get("model") ?? "").trim().slice(0, 60) || AGENTS[style].defaultModel;
+  let model = String(formData.get("model") ?? "").trim().slice(0, 60) || AGENTS[style].defaultModel;
 
-  const cover = await uploadedResult(user.id, formData);
+  // An uploaded file wins; otherwise the chat preview the user picked becomes the v1 result.
+  let cover = await uploadedResult(user.id, formData);
   if (typeof cover === "string") return { error: cover };
+  if (!cover) {
+    const preview = chosenPreview(user.id, formData);
+    if (typeof preview === "string") return { error: preview };
+    if (preview) {
+      cover = preview.image;
+      // The result was rendered by the preview model, so that is the model this version used.
+      model = preview.model || model;
+    }
+  }
 
   const sources = parseSources(formData.getAll("sources"), user.id);
   if (typeof sources === "string") return { error: sources };

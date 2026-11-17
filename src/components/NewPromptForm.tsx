@@ -47,7 +47,7 @@ export function NewPromptForm({ previewEnabled }: { previewEnabled: boolean }) {
 
       <SourceImagesInput />
 
-      <ResultImageInput />
+      <ResultImageInput label="결과 이미지 직접 올리기 (선택, 5MB 이하 — 올리면 채팅 미리보기 대신 사용)" />
 
       <fieldset>
         <legend className="label-mono text-secondary">공개 설정</legend>

@@ -449,8 +449,20 @@ export function PromptComposer({ previewEnabled }: { previewEnabled: boolean }) 
             </button>
           </div>
         </div>
-
       </div>
+      {chosen && (
+        <div className="mt-3 flex items-center gap-3 rounded-tile border border-mint px-3 py-2">
+          {/* eslint-disable-next-line @next/next/no-img-element -- the user's own generated preview */}
+          <img src={chosen.src} alt="" className="size-12 rounded-img object-cover" />
+          <p className="text-sm text-muted">
+            초안 v{chosen.version} 미리보기를 <span className="text-mint">v1 결과 이미지</span>로 저장해요 ·{" "}
+            <span className="text-secondary">{chosen.model}</span>
+          </p>
+          <button type="button" onClick={() => setChosen(null)} className="label-mono link-hover ml-auto text-secondary">
+            선택 해제
+          </button>
+        </div>
+      )}
     </div>
   );
 }
