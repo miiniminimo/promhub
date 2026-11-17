@@ -424,5 +424,21 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   check("[팔로우 모달] 다른 사람 빈 목록 문구", strip(r.html).includes("아직 팔로우하는 사람이 없어요."));
 }
 
+// ---- Author links, no "Civitai" label next to names
+{
+  const post = POSTS[0];
+  let r = await bob.get(`/p/${post.id}`);
+  const t = r.html.replace(/<!-- -->/g, "");
+  const href = `https://civitai.com/user/${encodeURIComponent(post.author)}`;
+  check("[작성자] Civitai 게시물 작성자 → Civitai 프로필 새 탭", new RegExp(`href="${href.replace(/[.?*+^$()|[\]\\]/g, "\\$&")}"[^>]*target="_blank"`).test(r.html) && t.includes(`@${post.author}</a>`));
+  check("[작성자] 작성자 옆 Civitai 문구 없음", !/@[^<]*<\/a> · Civitai/.test(t) && !t.includes("· Civitai ♥"));
+  check("[작성자] 원본 보기 링크는 유지", t.includes("원본 보기 · Civitai ↗"));
+  r = await bob.get("/me?tab=likes");
+  check("[작성자] 좋아요 목록 메타에 Civitai 없음", !r.html.replace(/<!-- -->/g, "").includes(" · Civitai"));
+  const repo = db().prepare("select id from repos where name='qa-neon-fox'").get().id;
+  r = await bob.get(`/repos/${repo}`);
+  check("[작성자] PromHub 저장소 작성자 → /u/ 페이지", r.html.includes('href="/u/qa_alice"'));
+}
+
 console.log(`\n기능 QA: ${pass}개 통과, ${fail}개 실패`);
 process.exitCode = fail ? 1 : 0;
