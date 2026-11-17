@@ -4,8 +4,12 @@ import OpenAI from "openai";
 import { previewPrompt } from "../prompt-format";
 import type { Style } from "../types";
 
-/** OpenAI image model for previews; `OPENAI_IMAGE_MODEL` overrides it. */
-export const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1-mini";
+/** OpenAI image model and quality for previews; `OPENAI_IMAGE_MODEL` / `OPENAI_IMAGE_QUALITY` override them. */
+export const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1.5";
+const QUALITIES = ["low", "medium", "high", "xhigh", "max", "auto"] as const;
+type Quality = (typeof QUALITIES)[number];
+const envQuality = process.env.OPENAI_IMAGE_QUALITY as Quality | undefined;
+const QUALITY: Quality = envQuality && QUALITIES.includes(envQuality) ? envQuality : "high";
 const SIZE = { width: 1024, height: 1024 };
 
 /** Previews need a real API key (they have no offline fallback). */
@@ -21,7 +25,7 @@ export async function generatePreview(draft: string, style: Style): Promise<Gene
       model: IMAGE_MODEL,
       prompt: previewPrompt(draft, style),
       size: `${SIZE.width}x${SIZE.height}`,
-      quality: "low",
+      quality: QUALITY,
       output_format: "webp",
       n: 1,
     });

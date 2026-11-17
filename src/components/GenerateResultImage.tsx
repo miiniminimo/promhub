@@ -42,7 +42,7 @@ export function GenerateResultImage({ repoId, commitId, version, enabled, auto }
   return (
     <div className="flex aspect-[4/3] max-h-80 w-full flex-col items-center justify-center gap-3 rounded-img border border-dashed border-frame px-6 text-center">
       {pending ? (
-        <p className="label-mono text-secondary">v{version} 프롬프트로 결과 이미지를 그리는 중… (10~30초)</p>
+        <p className="label-mono text-secondary">v{version} 프롬프트로 결과 이미지를 그리는 중… (20~40초)</p>
       ) : (
         <>
           <p className="text-sm text-secondary">

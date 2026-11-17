@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { CHALLENGES, grade, scoreOf } from "../src/lib/challenges.ts";
-import { joinNegative, previewPrompt, splitNegative, usesNegativePrompt } from "../src/lib/prompt-format.ts";
+import { cleanForPreview, joinNegative, previewPrompt, splitNegative, usesNegativePrompt } from "../src/lib/prompt-format.ts";
 import { safeNextPath } from "../src/lib/safe-redirect.ts";
 import { matchesQuery, searchQuery } from "../src/lib/feed-search.ts";
 import { diffPrompt, diffStats } from "../src/lib/prompt-diff.ts";
@@ -92,7 +92,11 @@ check("검색어 정리", searchQuery(["  a ", "b"]) === "a" && searchQuery(unde
   check("splitNegative 빈 negative", eq(splitNegative("a\nNegative prompt:   "), { prompt: "a", negative: null }));
   check("splitNegative ↔ joinNegative", eq(splitNegative(joinNegative("p q", "n m")), { prompt: "p q", negative: "n m" }));
   const pp = previewPrompt("1girl, silver hair\nNegative prompt: lowres, watermark", "anime");
-  check("미리보기 프롬프트: 스타일 + 본문 + Avoid", pp.startsWith("Anime illustration") && pp.includes("1girl, silver hair") && pp.endsWith("Avoid: lowres, watermark.") && !pp.includes("Negative prompt"));
+  check("미리보기 프롬프트: 스타일 + 본문 + Avoid", pp.startsWith("High-quality anime illustration") && pp.includes("1girl, silver hair") && pp.endsWith("Avoid: lowres, watermark.") && !pp.includes("Negative prompt"));
+  check("미리보기: SD 품질 태그·score·BREAK 제거", cleanForPreview("score_9, score_8_up, BREAK, masterpiece, best quality, absurdres, 1girl") === "1girl");
+  check("미리보기: (tag:1.2) 가중치 → tag, <lora> 제거", cleanForPreview("(silver hair:1.2), <lora:x:0.7> smile, [blurry]") === "silver hair, smile, blurry");
+  check("미리보기: 문장형 프롬프트는 그대로", cleanForPreview("A photo of a cat on a roof at night") === "A photo of a cat on a roof at night");
+  check("미리보기: negative 도 정리", previewPrompt("a\nNegative prompt: (bad hands:1.3), lowres", "photo").endsWith("Avoid: bad hands, lowres."));
   check("미리보기 프롬프트: negative 없으면 Avoid 없음", !previewPrompt("a cat", "photo").includes("Avoid"));
 }
 

@@ -302,10 +302,10 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   let r = await preview(alice, "a cat on a roof\nNegative prompt: blurry", "photo");
   const made = JSON.parse(r.text.split("\n").find((l) => l.startsWith("1:"))?.slice(2) ?? "{}");
   const madeId = Number(made.image?.src?.match(/\/api\/images\/(\d+)$/)?.[1]);
-  check("[미리보기] 생성 성공 + 본인 소유 이미지 + 한도 1회 차감", made.ok && made.image.width === 1024 && made.image.model === "gpt-image-1-mini" && used() === 1
+  check("[미리보기] 생성 성공 + 본인 소유 이미지 + 한도 1회 차감", made.ok && made.image.width === 1024 && made.image.model === "gpt-image-1.5" && used() === 1
     && db().prepare("select owner_id o from images where id=?").get(madeId)?.o === db().prepare("select id from users where username='qa_alice'").get().id, r.text.slice(-160));
   const sent = readFileSync(process.env.OPENAI_LOG, "utf8").split("\n").filter((l) => l.includes("/images/generations")).at(-1) ?? "";
-  check("[미리보기] 이미지 API 요청: 스타일 힌트 + Avoid + low/1024", sent.includes("Photorealistic photograph.") && sent.includes("Avoid: blurry.") && sent.includes('"quality":"low"') && sent.includes('"size":"1024x1024"'), sent.slice(0, 200));
+  check("[미리보기] 이미지 API 요청: gpt-image-1.5 · high · 스타일 힌트 + Avoid", sent.includes('"model":"gpt-image-1.5"') && sent.includes("photorealistic photograph.") && sent.includes("Avoid: blurry.") && sent.includes('"quality":"high"') && sent.includes('"size":"1024x1024"'), sent.slice(0, 200));
   check("[미리보기] 다른 사람은 미리보기 이미지 못 봄", (await bob.get(made.image.src)).status === 404 && (await alice.get(made.image.src)).status === 200);
   r = await preview(alice, "   ", "photo"); check("[미리보기] 빈 프롬프트 거부", r.text.includes("프롬프트를 먼저 만들어주세요"));
   r = await preview(alice, "x".repeat(4001), "photo"); check("[미리보기] 4000자 초과 거부", r.text.includes("너무 길어요"));
@@ -381,14 +381,14 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   check("[자동 결과] 남의 저장소 생성 차단", commits(neon)[0].j === null, `status ${r.status}`);
   r = await gen(alice, neon, c1.id);
   const img = JSON.parse(commits(neon)[0].j ?? "null");
-  check("[자동 결과] v1 결과 이미지 생성 + 생성 모델 기록", r.text.includes('"ok":true') && /^\/api\/images\/\d+$/.test(img?.src) && img.generatedBy === "gpt-image-1-mini", r.text.slice(-120));
+  check("[자동 결과] v1 결과 이미지 생성 + 생성 모델 기록", r.text.includes('"ok":true') && /^\/api\/images\/\d+$/.test(img?.src) && img.generatedBy === "gpt-image-1.5", r.text.slice(-120));
   check("[자동 결과] HEAD 가 아닌 버전은 대표 이미지 유지", db().prepare("select cover_json c from repos where id=?").get(neon).c === coverBefore);
   r = await gen(alice, neon, c1.id);
   check("[자동 결과] 이미 이미지 있는 버전 거부", r.text.includes("이미 결과 이미지가 있어요"));
   r = await gen(alice, neon, 999999);
   check("[자동 결과] 없는 버전 거부", r.text.includes("버전을 찾을 수 없습니다"));
   r = await alice.get(`/repos/${neon}?v=1`);
-  check("[자동 결과] 화면에 이미지 + '생성한 미리보기' 표시", r.html.includes(`src="${img.src}"`) && r.html.replace(/<!-- -->/g, "").includes("gpt-image-1-mini로 생성한 미리보기"));
+  check("[자동 결과] 화면에 이미지 + '생성한 미리보기' 표시", r.html.includes(`src="${img.src}"`) && r.html.replace(/<!-- -->/g, "").includes("gpt-image-1.5로 생성한 미리보기"));
   check("[자동 결과] 공개 저장소의 생성 이미지는 비로그인도 열람", (await fetch(BASE + img.src)).status === 200);
 
   let loc = await create({ title: "자동 생성", style: "anime", prompt: "1girl, silver hair", visibility: "public" });
