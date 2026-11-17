@@ -12,6 +12,7 @@ import { PromptDiff } from "@/components/PromptDiff";
 import { ResultImage } from "@/components/ResultImage";
 import { StyleTag } from "@/components/StyleTag";
 import { VisibilityToggle } from "@/components/VisibilityToggle";
+import { ACTION_HEIGHT } from "@/components/ui";
 import { getCurrentUser } from "@/lib/server/auth";
 import { previewAvailable } from "@/lib/server/image-gen";
 import { getCommits, getRepo, getSources } from "@/lib/server/repos";
@@ -155,13 +156,13 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
           )}
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <LikeButton kind="repo" targetId={String(repo.id)} liked={!!like.liked} count={like.count} signedIn={!!user} />
+        <div className="flex flex-wrap items-center gap-3">
+          <LikeButton kind="repo" targetId={String(repo.id)} liked={!!like.liked} count={like.count} signedIn={!!user} size="action" />
           {isOwner ? (
             <>
-              <VisibilityToggle repoId={repo.id} visibility={repo.visibility} />
+              <VisibilityToggle repoId={repo.id} visibility={repo.visibility} size="action" />
               {!editing && (
-                <Link href={`/repos/${repo.id}?edit=1`} className="btn-mint flex-1 py-2.5 text-center text-[13px]">
+                <Link href={`/repos/${repo.id}?edit=1`} className={`btn-mint ${ACTION_HEIGHT} flex flex-1 items-center justify-center py-0 text-[13px]`}>
                   수정하기
                 </Link>
               )}
