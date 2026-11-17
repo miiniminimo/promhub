@@ -6,11 +6,11 @@ import { CommitForm } from "@/components/CommitForm";
 import { ForkButton } from "@/components/ForkButton";
 import { GenerateResultImage } from "@/components/GenerateResultImage";
 import { LikeButton } from "@/components/LikeButton";
+import { ModelCard } from "@/components/ModelCard";
 import { PromptBlock } from "@/components/PromptBlock";
 import { PromptDiff } from "@/components/PromptDiff";
 import { ResultImage } from "@/components/ResultImage";
 import { StyleTag } from "@/components/StyleTag";
-import { VisibilityBadge } from "@/components/VisibilityBadge";
 import { VisibilityToggle } from "@/components/VisibilityToggle";
 import { getCurrentUser } from "@/lib/server/auth";
 import { previewAvailable } from "@/lib/server/image-gen";
@@ -50,26 +50,97 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
   const editing = isOwner && edit === "1";
   const like = likeInfo("repo", String(repo.id), user?.id ?? null);
 
+  const versionLink = (n: number, extra = "") => `/repos/${repo.id}?v=${n}${extra}`;
+
   return (
-    <main className="mx-auto w-full max-w-[1300px] px-6 py-10 lg:px-12">
-      <header className="flex flex-wrap items-start gap-5 border-b border-frame pb-8">
-        {repo.cover && (
-          <Image
-            src={repo.cover.src}
-            alt=""
-            width={96}
-            height={96}
-            className="size-24 rounded-tile border border-frame object-cover"
+    // Same layout as a community post (/p/[id]): the result on the left, details on the right.
+    <main className="mx-auto grid w-full max-w-[1300px] gap-8 px-6 py-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:px-12">
+      <div className="min-w-0 space-y-4">
+        {editing ? (
+          <CommitForm
+            repoId={repo.id}
+            prompt={commits[head].prompt}
+            style={repo.style}
+            model={repo.model}
+            version={head + 1}
+            previewEnabled={previewAvailable()}
           />
+        ) : base !== null ? (
+          <>
+            <Form action={`/repos/${repo.id}`} className="flex flex-wrap items-center gap-3">
+              <input type="hidden" name="v" value={selected + 1} />
+              <label htmlFor="diff-base" className="label-mono text-secondary">
+                비교 기준
+              </label>
+              <select
+                id="diff-base"
+                name="diff"
+                defaultValue={base + 1}
+                key={base}
+                className="rounded-tag border border-secondary bg-canvas px-2 py-1.5 font-mono text-[13px] focus:border-mint focus:outline-none"
+              >
+                {commits.map((c, i) =>
+                  i === selected ? null : (
+                    <option key={c.id} value={i + 1}>
+                      v{i + 1} · {c.message}
+                    </option>
+                  ),
+                )}
+              </select>
+              <button type="submit" className="label-mono link-hover text-mint">
+                비교
+              </button>
+            </Form>
+            {(commits[base].image || viewing.image) && (
+              <div className="grid grid-cols-2 gap-4">
+                <ResultImage image={commits[base].image} caption={`v${base + 1} 결과`} />
+                <ResultImage image={viewing.image} caption={`v${selected + 1} 결과`} />
+              </div>
+            )}
+            <PromptDiff label={`v${base + 1} → v${selected + 1}`} before={commits[base].prompt} after={viewing.prompt} />
+          </>
+        ) : viewing.image ? (
+          <figure>
+            <Image
+              src={viewing.image.src}
+              alt={`${repo.description} v${selected + 1}`}
+              width={viewing.image.width}
+              height={viewing.image.height}
+              loading="eager"
+              className="mx-auto h-auto max-h-[85vh] w-auto rounded-tile border border-frame"
+            />
+            {viewing.image.generatedBy && (
+              <figcaption className="label-mono mt-2 text-center font-normal normal-case text-secondary">
+                {viewing.image.generatedBy}로 생성한 미리보기
+              </figcaption>
+            )}
+          </figure>
+        ) : isOwner ? (
+          <GenerateResultImage
+            key={viewing.id}
+            repoId={repo.id}
+            commitId={viewing.id}
+            version={selected + 1}
+            enabled={previewAvailable()}
+            auto={autogen === "1" && selected === head}
+          />
+        ) : (
+          <div className="flex aspect-[4/3] max-h-80 w-full items-center justify-center rounded-tile border border-dashed border-frame text-sm text-secondary">
+            이 버전에는 아직 결과 이미지가 없어요.
+          </div>
         )}
-        <div className="min-w-0 flex-1">
-          <h1 className="break-all font-mono text-2xl font-bold">
-            <Link href={`/u/${repo.owner}`} className="link-hover text-secondary">
-              {repo.owner}
+      </div>
+
+      <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+        <div>
+          <StyleTag style={repo.style} />
+          <h1 className="mt-3 break-words text-[28px] font-bold leading-tight">{repo.description}</h1>
+          <p className="label-mono mt-3 font-normal text-secondary">
+            <Link href={`/u/${repo.owner}`} className="link-hover">
+              @{repo.owner}
             </Link>{" "}
-            / {repo.name}
-          </h1>
-          <p className="mt-1.5 text-muted">{repo.description}</p>
+            · v{commits.length} · {repo.updatedAt.slice(0, 10)}
+          </p>
           {repo.forkedLabel && (
             <p className="label-mono mt-2 font-normal text-secondary">
               ⑂ forked from{" "}
@@ -81,187 +152,113 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
               </Link>
             </p>
           )}
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <StyleTag style={repo.style} />
-            <span className="label-mono text-secondary">사용 모델 · {repo.model}</span>
-          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+
+        <div className="flex flex-wrap gap-3">
           <LikeButton kind="repo" targetId={String(repo.id)} liked={!!like.liked} count={like.count} signedIn={!!user} />
           {isOwner ? (
-            <VisibilityToggle repoId={repo.id} visibility={repo.visibility} />
-          ) : (
             <>
-              <VisibilityBadge visibility={repo.visibility} />
-              <div className="w-64">
-                <ForkButton repoId={repo.id} />
-              </div>
-            </>
-          )}
-        </div>
-      </header>
-
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <section>
-          {editing ? (
-            <CommitForm
-              repoId={repo.id}
-              prompt={commits[head].prompt}
-              style={repo.style}
-              model={repo.model}
-              version={head + 1}
-              previewEnabled={previewAvailable()}
-            />
-          ) : (
-            <div className="space-y-4">
-              <div className="flex min-h-9 flex-wrap items-center justify-between gap-4">
-                <p className="label-mono text-secondary">
-                  v{selected + 1} · {viewing.hash}
-                  {selected === head && <span className="ml-2 text-mint">HEAD</span>}
-                </p>
-                <div className="flex flex-wrap items-center gap-4">
-                  {base !== null ? (
-                    <Link href={`/repos/${repo.id}?v=${selected + 1}`} className="label-mono link-hover text-secondary">
-                      프롬프트 보기
-                    </Link>
-                  ) : (
-                    selected > 0 && (
-                      <Link href={`/repos/${repo.id}?v=${selected + 1}&diff=${selected}`} className="label-mono link-hover text-mint">
-                        변경 사항 보기
-                      </Link>
-                    )
-                  )}
-                  {isOwner && (
-                    <Link href={`/repos/${repo.id}?edit=1`} className="btn-mint">
-                      수정하기
-                    </Link>
-                  )}
-                </div>
-              </div>
-              {base !== null ? (
-                <>
-                  <Form action={`/repos/${repo.id}`} className="flex flex-wrap items-center gap-3">
-                    <input type="hidden" name="v" value={selected + 1} />
-                    <label htmlFor="diff-base" className="label-mono text-secondary">
-                      비교 기준
-                    </label>
-                    <select
-                      id="diff-base"
-                      name="diff"
-                      defaultValue={base + 1}
-                      key={base}
-                      className="rounded-tag border border-secondary bg-canvas px-2 py-1.5 font-mono text-[13px] focus:border-mint focus:outline-none"
-                    >
-                      {commits.map((c, i) =>
-                        i === selected ? null : (
-                          <option key={c.id} value={i + 1}>
-                            v{i + 1} · {c.message}
-                          </option>
-                        ),
-                      )}
-                    </select>
-                    <button type="submit" className="label-mono link-hover text-mint">
-                      비교
-                    </button>
-                  </Form>
-                  {(commits[base].image || viewing.image) && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <ResultImage image={commits[base].image} caption={`v${base + 1} 결과`} />
-                      <ResultImage image={viewing.image} caption={`v${selected + 1} 결과`} />
-                    </div>
-                  )}
-                  <PromptDiff
-                    label={`v${base + 1} → v${selected + 1}`}
-                    before={commits[base].prompt}
-                    after={viewing.prompt}
-                  />
-                </>
-              ) : (
-                <>
-                  {viewing.image ? (
-                    <ResultImage image={viewing.image} caption={`v${selected + 1} 결과 이미지`} />
-                  ) : (
-                    isOwner && (
-                      <GenerateResultImage
-                        key={viewing.id}
-                        repoId={repo.id}
-                        commitId={viewing.id}
-                        version={selected + 1}
-                        enabled={previewAvailable()}
-                        auto={autogen === "1" && selected === head}
-                      />
-                    )
-                  )}
-                  <PromptBlock label="Prompt" text={viewing.prompt} />
-                </>
+              <VisibilityToggle repoId={repo.id} visibility={repo.visibility} />
+              {!editing && (
+                <Link href={`/repos/${repo.id}?edit=1`} className="btn-mint flex-1 py-2.5 text-center text-[13px]">
+                  수정하기
+                </Link>
               )}
+            </>
+          ) : (
+            <div className="min-w-64 flex-1">
+              <ForkButton repoId={repo.id} />
             </div>
           )}
-        </section>
+        </div>
 
-        <aside className="space-y-10">
-          {sources.length > 0 && (
-            <section>
-              <h2 className="label-mono border-b border-frame pb-3 text-secondary">Source images · {sources.length}</h2>
-              <ul className="mt-4 grid grid-cols-4 gap-3 lg:grid-cols-2">
-                {sources.map((s, i) => (
-                  <li key={s.src}>
-                    <a href={s.link ?? s.src} target="_blank" rel="noreferrer" className="group block">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- may be an arbitrary external host */}
-                      <img
-                        src={s.src}
-                        alt={`소스 이미지 ${i + 1}`}
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
-                        className="aspect-square w-full rounded-img border border-frame object-cover"
-                      />
-                      <span className="label-mono mt-1.5 block truncate font-normal text-secondary transition-colors duration-150 group-hover:text-link-hover">
-                        {s.link ? `↗ ${new URL(s.link).hostname}` : "업로드한 파일"}
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+        <ModelCard model={repo.model} />
+
+        {!editing && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <p className="label-mono text-secondary">
+                v{selected + 1} · {viewing.hash}
+                {selected === head && <span className="ml-2 text-mint">HEAD</span>}
+              </p>
+              {base !== null ? (
+                <Link href={versionLink(selected + 1)} className="label-mono link-hover text-secondary">
+                  프롬프트 보기
+                </Link>
+              ) : (
+                selected > 0 && (
+                  <Link href={versionLink(selected + 1, `&diff=${selected}`)} className="label-mono link-hover text-mint">
+                    변경 사항 보기
+                  </Link>
+                )
+              )}
+            </div>
+            <PromptBlock label="Prompt" text={viewing.prompt} />
+          </div>
+        )}
+
+        {sources.length > 0 && (
           <section>
-            <h2 className="label-mono border-b border-frame pb-3 text-secondary">History · {commits.length} commits</h2>
-            <ol className="mt-4 space-y-3 border-l border-purple-rule pl-4">
-              {commits
-                .map((commit, i) => ({ commit, i }))
-                .reverse()
-                .map(({ commit, i }) => (
-                  <li key={commit.id}>
-                    <Link
-                      href={`/repos/${repo.id}?v=${i + 1}`}
-                      className={`block rounded-tile border px-4 py-3 transition-colors duration-150 ${
-                        i === selected && !editing ? "border-mint" : "border-frame hover:border-secondary"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="label-mono text-secondary">
-                            v{i + 1} · {commit.hash} · {formatTime(commit.createdAt)}
-                          </p>
-                          <p className="mt-1.5 text-[15px] font-bold">{commit.message}</p>
-                        </div>
-                        {commit.image && (
-                          <Image
-                            src={commit.image.src}
-                            alt=""
-                            width={44}
-                            height={44}
-                            className="size-11 shrink-0 rounded-img border border-frame object-cover"
-                          />
-                        )}
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-            </ol>
+            <h2 className="label-mono border-b border-frame pb-3 text-secondary">Source images · {sources.length}</h2>
+            <ul className="mt-4 grid grid-cols-4 gap-3">
+              {sources.map((s, i) => (
+                <li key={s.src}>
+                  <a href={s.link ?? s.src} target="_blank" rel="noreferrer" className="group block">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- may be an arbitrary external host */}
+                    <img
+                      src={s.src}
+                      alt={`소스 이미지 ${i + 1}`}
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                      className="aspect-square w-full rounded-img border border-frame object-cover"
+                    />
+                    <span className="label-mono mt-1.5 block truncate font-normal text-secondary transition-colors duration-150 group-hover:text-link-hover">
+                      {s.link ? `↗ ${new URL(s.link).hostname}` : "업로드한 파일"}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
           </section>
-        </aside>
-      </div>
+        )}
+
+        <section>
+          <h2 className="label-mono border-b border-frame pb-3 text-secondary">History · {commits.length} commits</h2>
+          <ol className="mt-4 space-y-3 border-l border-purple-rule pl-4">
+            {commits
+              .map((commit, i) => ({ commit, i }))
+              .reverse()
+              .map(({ commit, i }) => (
+                <li key={commit.id}>
+                  <Link
+                    href={versionLink(i + 1)}
+                    className={`block rounded-tile border px-4 py-3 transition-colors duration-150 ${
+                      i === selected && !editing ? "border-mint" : "border-frame hover:border-secondary"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="label-mono text-secondary">
+                          v{i + 1} · {commit.hash} · {formatTime(commit.createdAt)}
+                        </p>
+                        <p className="mt-1.5 break-words text-[15px] font-bold">{commit.message}</p>
+                      </div>
+                      {commit.image && (
+                        <Image
+                          src={commit.image.src}
+                          alt=""
+                          width={44}
+                          height={44}
+                          className="size-11 shrink-0 rounded-img border border-frame object-cover"
+                        />
+                      )}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+          </ol>
+        </section>
+      </aside>
     </main>
   );
 }
