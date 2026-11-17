@@ -255,5 +255,32 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   check("[팔로잉] 둘러보기엔 포크 미노출 유지", !cards(r.html).has(`/repos/${carolRepo}`));
 }
 
+// ---- Model picked by the agent (no model field on /new)
+{
+  const { readdirSync, readFileSync: read } = await import("node:fs");
+  const js = readdirSync(".next/static", { recursive: true }).filter((f) => f.endsWith(".js")).map((f) => read(`.next/static/${f}`, "utf8")).join("\n");
+  const createId = js.match(/\("([0-9a-f]{40,})",[^)]{0,80}"createRepoAction"/)?.[1];
+  const create = async (fields) => {
+    const body = new FormData();
+    for (const [k, v] of Object.entries(fields)) body.set(`_1_${k}`, v);
+    body.set("0", '["$undefined","$K1"]');
+    const res = await fetch(BASE + "/new", { method: "POST", redirect: "manual", headers: { cookie: alice.cookie, "Next-Action": createId, Accept: "text/x-component" }, body });
+    return { status: res.status, redirect: res.headers.get("x-action-redirect") ?? res.headers.get("location") ?? "", text: await res.text() };
+  };
+  const modelOf = (r) => db().prepare("select model from repos where id=?").get(Number(r.redirect.match(/\/repos\/(\d+)/)?.[1]))?.model;
+  let r = await alice.get("/new");
+  check("[모델] 새 프롬프트 화면에 모델 입력칸 없음", r.status === 200 && !r.html.includes("사용 모델") && !r.html.includes('list="models"'));
+  check("[모델] 모델은 숨은 값으로 전송 (기본 애니 → Illustrious)", /<input type="hidden" name="model" value="Illustrious"/.test(r.html));
+  check("[모델] createRepoAction id", !!createId);
+  r = await create({ title: "모델 없음", style: "photo", prompt: "a cat on a roof", visibility: "private" });
+  check("[모델] 모델 없이 저장 → 스타일 기본값 (실사 → Flux.1 D)", modelOf(r) === "Flux.1 D", r.redirect || r.text.slice(-100));
+  r = await create({ title: "모델 지정", style: "anime", prompt: "1girl", model: "Pony", visibility: "private" });
+  check("[모델] AI 가 고른 모델 저장 (Pony)", modelOf(r) === "Pony");
+  r = await create({ title: "긴 모델", style: "anime", prompt: "1girl", model: "x".repeat(200), visibility: "private" });
+  check("[모델] 모델 이름 60자로 자름", modelOf(r)?.length === 60);
+  r = await create({ title: "", style: "anime", prompt: "1girl", visibility: "private" });
+  check("[모델] 제목 없으면 오류", r.text.includes("제목을 입력해주세요"));
+}
+
 console.log(`\n기능 QA: ${pass}개 통과, ${fail}개 실패`);
 process.exitCode = fail ? 1 : 0;

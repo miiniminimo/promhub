@@ -22,6 +22,8 @@ type ChatMessage = {
   /** Assistant turns that changed the prompt carry the new draft (and whether it is complete). */
   draft?: string;
   ready?: boolean;
+  /** Target image model the agent wrote this draft for. */
+  model?: string;
 };
 
 const ACCEPT = "image/jpeg,image/png,image/gif,image/webp,application/pdf,.txt,.md,.json,.csv,.log,text/*";
@@ -47,12 +49,13 @@ function AttachmentChip({ file, onRemove }: { file: Attachment; onRemove?: () =>
 }
 
 /** A prompt draft shown inside the chat; earlier drafts are dimmed so the latest one stands out. */
-function DraftCard({ text, version, ready, latest }: { text: string; version: number; ready: boolean; latest: boolean }) {
+function DraftCard({ text, model, version, ready, latest }: { text: string; model?: string; version: number; ready: boolean; latest: boolean }) {
   return (
     <div className={`w-full max-w-[85%] rounded-tile border ${latest ? "border-mint" : "border-frame opacity-60"}`}>
       <p className="label-mono flex items-center gap-2 border-b border-frame px-4 py-2 text-secondary">
         프롬프트 초안 v{version}
         {latest && <span className="text-mint">{ready ? "● 완성" : "최신"}</span>}
+        {model && <span className="ml-auto font-normal normal-case">{model}</span>}
       </p>
       <div className="space-y-2 px-4 py-3 font-mono text-[13px] leading-relaxed">
         {text.split("\n").map((line, i) => (
@@ -83,6 +86,8 @@ function fillIfEmpty(form: HTMLFormElement, name: string, value: string) {
  */
 export function PromptComposer() {
   const [prompt, setPrompt] = useState("");
+  // Target model per style agent: the agent's pick (users can ask for another one in the chat).
+  const [models, setModels] = useState<Partial<Record<Style, string>>>({});
   const [style, setStyle] = useState<Style>("anime");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -95,6 +100,7 @@ export function PromptComposer() {
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const agent = AGENTS[style];
+  const model = models[style] ?? "";
 
   // Follow the style radio in the surrounding form: it picks which agent answers next.
   useEffect(() => {
@@ -128,10 +134,9 @@ export function PromptComposer() {
     const text = input.trim();
     if ((!text && attachments.length === 0) || pending || uploading > 0) return;
     const files = attachments;
-    // Read the model/style the user picked elsewhere in the same form.
+    // The style comes from the surrounding form; the title is filled into it below.
     const form = rootRef.current?.closest("form");
-    const data = form ? new FormData(form) : null;
-    const context = { model: String(data?.get("model") ?? ""), style };
+    const context = { model, style };
     const history = messages.map((m) => ({
       role: m.role,
       content: m.role === "assistant" ? m.raw ?? m.text : m.text,
@@ -161,7 +166,6 @@ export function PromptComposer() {
       const filled = form
         ? [
             fillIfEmpty(form, "title", result.title) && "제목",
-            fillIfEmpty(form, "model", result.model) && "사용 모델",
           ].filter((f): f is string => !!f)
         : [];
       setMessages((prev) => [
@@ -173,10 +177,13 @@ export function PromptComposer() {
           agent: result.agent,
           references: result.references,
           filled,
-          ...(result.prompt && result.prompt !== prompt ? { draft: result.prompt, ready: result.ready } : {}),
+          ...(result.prompt && result.prompt !== prompt
+            ? { draft: result.prompt, ready: result.ready, model: result.model }
+            : {}),
         },
       ]);
       if (result.prompt) setPrompt(result.prompt);
+      if (result.model) setModels((prev) => ({ ...prev, [result.agent]: result.model }));
       requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
     });
   }
@@ -184,6 +191,7 @@ export function PromptComposer() {
   return (
     <div ref={rootRef}>
       <input type="hidden" name="prompt" value={prompt} />
+      <input type="hidden" name="model" value={model || agent.defaultModel} />
 
       <div className="flex items-end justify-between gap-4 border-b border-frame pb-3">
         <span className="label-mono text-secondary">프롬프트 *</span>
@@ -267,6 +275,7 @@ export function PromptComposer() {
                     <DraftCard
                       text={m.draft}
                       version={messages.slice(0, i + 1).filter((x) => x.draft).length}
+                      model={m.model}
                       ready={!!m.ready}
                       latest={m.draft === prompt && !messages.slice(i + 1).some((x) => x.draft)}
                     />

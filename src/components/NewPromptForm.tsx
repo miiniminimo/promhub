@@ -8,8 +8,6 @@ import { ResultImageInput } from "./ResultImageInput";
 import { SourceImagesInput } from "./SourceImagesInput";
 import { fieldClass } from "./ui";
 
-const MODEL_SUGGESTIONS = ["Flux.1 D", "SDXL 1.0", "Pony", "Illustrious", "Krea 2", "OpenAI", "Imagen4", "Claude Opus 5.5", "GPT-5"];
-
 export function NewPromptForm() {
   const [state, action, pending] = useActionState(createRepoAction, undefined);
 
@@ -29,24 +27,7 @@ export function NewPromptForm() {
         <input name="title" required placeholder="예: 시네마틱 제품 사진 프롬프트" className={`${fieldClass} mt-2`} />
       </label>
 
-      {/* Both columns: label, 8px gap, then a 40px-tall control so the rows line up. */}
-      <div className="grid gap-6 sm:grid-cols-2">
-        <label className="block">
-          <span className="label-mono block text-secondary">사용 모델 *</span>
-          <input
-            name="model"
-            required
-            list="models"
-            placeholder="예: Flux.1 D"
-            className={`${fieldClass} mt-2 h-10`}
-          />
-          <datalist id="models">
-            {MODEL_SUGGESTIONS.map((m) => (
-              <option key={m} value={m} />
-            ))}
-          </datalist>
-        </label>
-        <div>
+      <div>
           <span id="style-label" className="label-mono block text-secondary">
             스타일 *
           </span>
@@ -60,7 +41,6 @@ export function NewPromptForm() {
               </label>
             ))}
           </div>
-        </div>
       </div>
 
       <PromptComposer />

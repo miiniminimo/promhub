@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { AGENTS } from "@/lib/agents";
 import { getChallenge, grade, scoreOf, type TestResult } from "@/lib/challenges";
 import { SAFE_IMAGE_TYPES } from "@/lib/image-types";
 import { getPost } from "@/lib/posts";
@@ -150,13 +151,14 @@ async function uploadedResult(ownerId: number, formData: FormData): Promise<Post
 export async function createRepoAction(_: FormState, formData: FormData): Promise<FormState> {
   const user = await requireUser("/new");
   const title = String(formData.get("title") ?? "").trim();
-  const model = String(formData.get("model") ?? "").trim();
   const style = String(formData.get("style"));
   const prompt = normalizePrompt(formData.get("prompt"));
   const visibility = formData.get("visibility") === "private" ? "private" : "public";
-  if (!title || !model) return { error: "제목과 사용 모델은 필수입니다." };
+  if (!title) return { error: "제목을 입력해주세요." };
   if (!prompt) return { error: "AI와 대화해서 프롬프트를 먼저 만들어주세요." };
   if (!isStyle(style)) return { error: "스타일을 선택해주세요." };
+  // The agent picks the target model; fall back to the style's default if none came through.
+  const model = String(formData.get("model") ?? "").trim().slice(0, 60) || AGENTS[style].defaultModel;
 
   const cover = await uploadedResult(user.id, formData);
   if (typeof cover === "string") return { error: cover };
