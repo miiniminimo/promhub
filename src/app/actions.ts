@@ -27,6 +27,7 @@ import {
 } from "@/lib/server/repos";
 import { buildPrompt, type BuilderContext, type BuilderResult, DEFAULT_FILE_MESSAGE } from "@/lib/server/prompt-builder";
 import { getUserByUsername, isFollowing, type LikeKind, likeInfo, setFollow, setLike } from "@/lib/server/social";
+import { generatePreview, previewAvailable } from "@/lib/server/image-gen";
 import { takeRateLimit } from "@/lib/server/rate-limit";
 import { saveSubmission } from "@/lib/server/submissions";
 import type { PostImage, Style } from "@/lib/types";
@@ -236,6 +237,43 @@ export async function toggleLikeAction(kind: LikeKind, targetId: string) {
   if (!visible) throw new Error("Not found");
   setLike(user.id, kind, targetId, !likeInfo(kind, targetId, user.id).liked);
   revalidatePath("/", "layout");
+}
+
+// ---------- Image previews ----------
+
+export type PreviewImage = PostImage & { model: string };
+
+const MAX_PREVIEW_PROMPT = 4000;
+
+/**
+ * Renders the current chat draft with the OpenAI image model and stores it as the user's
+ * (private until used in a public repo) image, so it can become the new repo's result image.
+ */
+export async function generatePreviewAction(
+  prompt: string,
+  style: string,
+): Promise<{ ok: true; image: PreviewImage; remainingToday: number } | { ok: false; error: string }> {
+  const user = await requireUser("/new");
+  const draft = String(prompt ?? "").trim();
+  if (!draft) return { ok: false, error: "AI와 대화해서 프롬프트를 먼저 만들어주세요." };
+  if (draft.length > MAX_PREVIEW_PROMPT) return { ok: false, error: `프롬프트가 너무 길어요. (${MAX_PREVIEW_PROMPT}자 이하)` };
+  if (!isStyle(style)) return { ok: false, error: "스타일을 선택해주세요." };
+  // Checked before the quota so a missing key doesn't use up the user's previews.
+  if (!previewAvailable()) return { ok: false, error: "이미지 미리보기는 OpenAI API 키가 있어야 사용할 수 있어요." };
+  const limit = takeRateLimit(user.id, "image_preview", "이미지 미리보기");
+  if (!limit.ok) return limit;
+
+  try {
+    const image = await generatePreview(draft, style);
+    const id = saveImage(user.id, image.mime, image.data);
+    return {
+      ok: true,
+      image: { src: `/api/images/${id}`, width: image.width, height: image.height, model: image.model },
+      remainingToday: limit.remainingToday,
+    };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "알 수 없는 오류" };
+  }
 }
 
 // ---------- Prompt tests ----------

@@ -8,7 +8,7 @@ import { ResultImageInput } from "./ResultImageInput";
 import { SourceImagesInput } from "./SourceImagesInput";
 import { fieldClass } from "./ui";
 
-export function NewPromptForm() {
+export function NewPromptForm({ previewEnabled }: { previewEnabled: boolean }) {
   const [state, action, pending] = useActionState(createRepoAction, undefined);
 
   return (
@@ -43,7 +43,7 @@ export function NewPromptForm() {
           </div>
       </div>
 
-      <PromptComposer />
+      <PromptComposer previewEnabled={previewEnabled} />
 
       <SourceImagesInput />
 

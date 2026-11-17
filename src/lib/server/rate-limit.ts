@@ -2,7 +2,7 @@ import "server-only";
 
 import { getDb, sql } from "./db";
 
-export type RateKind = "ai_chat" | "chat_upload";
+export type RateKind = "ai_chat" | "chat_upload" | "image_preview";
 
 const MINUTE = 60_000;
 const DAY = 24 * 60 * MINUTE;
@@ -12,7 +12,10 @@ const envInt = (name: string, fallback: number) => {
   return Number.isInteger(n) && n > 0 ? n : fallback;
 };
 
-/** Sliding windows per kind; AI limits can be tuned with PROMHUB_AI_PER_MINUTE / PROMHUB_AI_PER_DAY. */
+/**
+ * Sliding windows per kind. Tunable: PROMHUB_AI_PER_MINUTE / PROMHUB_AI_PER_DAY (chat turns),
+ * PROMHUB_IMAGE_PER_DAY (image previews, the most expensive call).
+ */
 const LIMITS: Record<RateKind, { ms: number; max: number }[]> = {
   ai_chat: [
     { ms: MINUTE, max: envInt("PROMHUB_AI_PER_MINUTE", 10) },
@@ -21,6 +24,10 @@ const LIMITS: Record<RateKind, { ms: number; max: number }[]> = {
   chat_upload: [
     { ms: MINUTE, max: 20 },
     { ms: DAY, max: 200 },
+  ],
+  image_preview: [
+    { ms: MINUTE, max: 3 },
+    { ms: DAY, max: envInt("PROMHUB_IMAGE_PER_DAY", 20) },
   ],
 };
 
