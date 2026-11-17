@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "qa": "bash qa/run.sh"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
