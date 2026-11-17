@@ -293,8 +293,14 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   };
   check("[미리보기] generatePreviewAction id", !!previewId);
   const used = () => db().prepare("select count(*) c from rate_events e join users u on u.id=e.user_id where u.username='qa_alice' and kind='image_preview'").get().c;
-  let r = await preview(alice, "a cat on a roof", "photo");
-  check("[미리보기] 키 없음(오프라인) → 안내 + 한도 차감 없음", r.text.includes("OpenAI API 키가 있어야") && used() === 0, r.text.slice(-120));
+  let r = await preview(alice, "a cat on a roof\nNegative prompt: blurry", "photo");
+  const made = JSON.parse(r.text.split("\n").find((l) => l.startsWith("1:"))?.slice(2) ?? "{}");
+  const madeId = Number(made.image?.src?.match(/\/api\/images\/(\d+)$/)?.[1]);
+  check("[미리보기] 생성 성공 + 본인 소유 이미지 + 한도 1회 차감", made.ok && made.image.width === 1024 && made.image.model === "gpt-image-1-mini" && used() === 1
+    && db().prepare("select owner_id o from images where id=?").get(madeId)?.o === db().prepare("select id from users where username='qa_alice'").get().id, r.text.slice(-160));
+  const sent = readFileSync(process.env.OPENAI_LOG, "utf8").split("\n").filter((l) => l.includes("/images/generations")).at(-1) ?? "";
+  check("[미리보기] 이미지 API 요청: 스타일 힌트 + Avoid + low/1024", sent.includes("Photorealistic photograph.") && sent.includes("Avoid: blurry.") && sent.includes('"quality":"low"') && sent.includes('"size":"1024x1024"'), sent.slice(0, 200));
+  check("[미리보기] 다른 사람은 미리보기 이미지 못 봄", (await bob.get(made.image.src)).status === 404 && (await alice.get(made.image.src)).status === 200);
   r = await preview(alice, "   ", "photo"); check("[미리보기] 빈 프롬프트 거부", r.text.includes("프롬프트를 먼저 만들어주세요"));
   r = await preview(alice, "x".repeat(4001), "photo"); check("[미리보기] 4000자 초과 거부", r.text.includes("너무 길어요"));
   r = await preview(alice, "a cat", "nope"); check("[미리보기] 잘못된 스타일 거부", r.text.includes("스타일을 선택해주세요"));
@@ -335,6 +341,60 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   }
   r = await create(alice, base);
   check("[미리보기 저장] 미리보기 없이도 저장 (이미지 없음)", !!r.id && v1(r.id) === null);
+}
+
+// ---- Result images rendered for versions without one
+{
+  const { readdirSync, readFileSync: read } = await import("node:fs");
+  const js = readdirSync(".next/static", { recursive: true }).filter((f) => f.endsWith(".js")).map((f) => read(`.next/static/${f}`, "utf8")).join("\n");
+  const genId = js.match(/\("([0-9a-f]{40,})",[^)]{0,80}"generateVersionImageAction"/)?.[1];
+  const createId = js.match(/\("([0-9a-f]{40,})",[^)]{0,80}"createRepoAction"/)?.[1];
+  check("[자동 결과] generateVersionImageAction id", !!genId);
+  const gen = async (who, repoId, commitId) => {
+    const res = await fetch(BASE + `/repos/${repoId}`, { method: "POST", redirect: "manual", headers: { cookie: who.cookie, "Next-Action": genId, "Content-Type": "text/plain;charset=UTF-8", Accept: "text/x-component" }, body: JSON.stringify([repoId, commitId]) });
+    return { status: res.status, text: await res.text() };
+  };
+  const create = async (fields) => {
+    const body = new FormData();
+    for (const [k, v] of Object.entries(fields)) body.set(`_1_${k}`, v);
+    body.set("0", '["$undefined","$K1"]');
+    const res = await fetch(BASE + "/new", { method: "POST", redirect: "manual", headers: { cookie: alice.cookie, "Next-Action": createId, Accept: "text/x-component" }, body });
+    // Next appends the navigation type, e.g. "/repos/3?autogen=1;push".
+    return (res.headers.get("x-action-redirect") ?? "").split(";")[0];
+  };
+  const commits = (repoId) => db().prepare("select id, image_json j from commits where repo_id=? order by id").all(repoId);
+  const neon = db().prepare("select id from repos where name='qa-neon-fox'").get().id;
+  const [c1] = commits(neon);
+  const coverBefore = db().prepare("select cover_json c from repos where id=?").get(neon).c;
+
+  let r = await alice.get(`/repos/${neon}?v=1`);
+  check("[자동 결과] 작성자: 이미지 없는 버전에 생성 버튼", r.html.includes("이 버전으로 결과 이미지 만들기"));
+  r = await bob.get(`/repos/${neon}?v=1`);
+  check("[자동 결과] 다른 사람에겐 버튼 없음", r.status === 200 && !r.html.includes("이 버전으로 결과 이미지 만들기"));
+  r = await gen(bob, neon, c1.id);
+  check("[자동 결과] 남의 저장소 생성 차단", commits(neon)[0].j === null, `status ${r.status}`);
+  r = await gen(alice, neon, c1.id);
+  const img = JSON.parse(commits(neon)[0].j ?? "null");
+  check("[자동 결과] v1 결과 이미지 생성 + 생성 모델 기록", r.text.includes('"ok":true') && /^\/api\/images\/\d+$/.test(img?.src) && img.generatedBy === "gpt-image-1-mini", r.text.slice(-120));
+  check("[자동 결과] HEAD 가 아닌 버전은 대표 이미지 유지", db().prepare("select cover_json c from repos where id=?").get(neon).c === coverBefore);
+  r = await gen(alice, neon, c1.id);
+  check("[자동 결과] 이미 이미지 있는 버전 거부", r.text.includes("이미 결과 이미지가 있어요"));
+  r = await gen(alice, neon, 999999);
+  check("[자동 결과] 없는 버전 거부", r.text.includes("버전을 찾을 수 없습니다"));
+  r = await alice.get(`/repos/${neon}?v=1`);
+  check("[자동 결과] 화면에 이미지 + '생성한 미리보기' 표시", r.html.includes(`src="${img.src}"`) && r.html.replace(/<!-- -->/g, "").includes("gpt-image-1-mini로 생성한 미리보기"));
+  check("[자동 결과] 공개 저장소의 생성 이미지는 비로그인도 열람", (await fetch(BASE + img.src)).status === 200);
+
+  let loc = await create({ title: "자동 생성", style: "anime", prompt: "1girl, silver hair", visibility: "public" });
+  const autoRepo = Number(loc.match(/\/repos\/(\d+)/)?.[1]);
+  check("[자동 결과] 이미지 없이 저장 → ?autogen=1 로 이동", /\/repos\/\d+\?autogen=1$/.test(loc), loc);
+  r = await gen(alice, autoRepo, commits(autoRepo)[0].id);
+  const headImg = JSON.parse(commits(autoRepo)[0].j ?? "null");
+  check("[자동 결과] HEAD 결과 생성 → 대표 이미지 + 피드 카드", JSON.parse(db().prepare("select cover_json c from repos where id=?").get(autoRepo).c ?? "null")?.src === headImg?.src && (await bob.get("/")).html.includes(`src="${headImg?.src}"`));
+  loc = await create({ title: "이미지 있음", style: "photo", prompt: "a cat", visibility: "private", image: PNG, imageWidth: "1", imageHeight: "1" });
+  check("[자동 결과] 이미지 넣어 저장하면 autogen 없음", /\/repos\/\d+$/.test(loc), loc);
+  r = await alice.submit(`/repos/${autoRepo}?edit=1`, 'name="repoId"', { prompt: "1girl, silver hair, smile", message: "미소" });
+  check("[자동 결과] 이미지 없이 커밋 → ?autogen=1", r.status === 303 && /\?autogen=1$/.test(r.location ?? ""), r.location);
 }
 
 console.log(`\n기능 QA: ${pass}개 통과, ${fail}개 실패`);

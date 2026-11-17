@@ -22,6 +22,7 @@ import {
   type RepoSource,
   saveChatFile,
   saveImage,
+  setCommitImage,
   setVisibility,
   slugify,
 } from "@/lib/server/repos";
@@ -117,8 +118,11 @@ export async function commitAction(_: FormState, formData: FormData): Promise<Fo
     prompt,
     image,
   });
-  redirect(`/repos/${repoId}`);
+  redirect(`/repos/${repoId}${image ? "" : autogenSuffix()}`);
 }
+
+/** Without a result image, the repo page renders one for the new version right away. */
+const autogenSuffix = () => (previewAvailable() ? "?autogen=1" : "");
 
 export async function toggleVisibilityAction(repoId: number) {
   const repo = await ownedRepo(repoId);
@@ -202,7 +206,7 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
     message: "Initial commit",
     sources,
   });
-  redirect(`/repos/${repoId}`);
+  redirect(`/repos/${repoId}${cover ? "" : autogenSuffix()}`);
 }
 
 const MAX_SOURCES = 4;
@@ -297,6 +301,30 @@ export async function generatePreviewAction(
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "알 수 없는 오류" };
   }
+}
+
+/** Renders a result image for a version of the user's repo that has none yet. */
+export async function generateVersionImageAction(
+  repoId: number,
+  commitId: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const repo = await ownedRepo(repoId);
+  const commit = getCommits(repo.id).find((c) => c.id === commitId);
+  if (!commit) return { ok: false, error: "버전을 찾을 수 없습니다." };
+  if (commit.image) return { ok: false, error: "이 버전에는 이미 결과 이미지가 있어요." };
+  if (!previewAvailable()) return { ok: false, error: "결과 이미지를 만들려면 OpenAI API 키가 필요해요." };
+  const limit = takeRateLimit(repo.ownerId, "image_preview", "이미지 생성");
+  if (!limit.ok) return limit;
+
+  try {
+    const image = await generatePreview(commit.prompt, repo.style);
+    const id = saveImage(repo.ownerId, image.mime, image.data);
+    setCommitImage(repo.id, commit.id, { src: `/api/images/${id}`, width: image.width, height: image.height, generatedBy: image.model });
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "알 수 없는 오류" };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true };
 }
 
 // ---------- Prompt tests ----------

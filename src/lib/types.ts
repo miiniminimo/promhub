@@ -1,6 +1,12 @@
 export type Style = "anime" | "photo" | "illustration";
 
-export type PostImage = { src: string; width: number; height: number };
+export type PostImage = {
+  src: string;
+  width: number;
+  height: number;
+  /** Set when PromHub rendered the image itself (e.g. "gpt-image-1-mini"), not the author's own result. */
+  generatedBy?: string;
+};
 
 export type Post = {
   id: string;
