@@ -32,8 +32,15 @@ class Browser {
   }
   async login(username, password) { return this.submit("/login", 'name="username"', { username, password }); }
 }
-const PNG = new File([Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64")], "result.png", { type: "image/png" });
-const SVG = new File(['<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'], "x.svg", { type: "image/svg+xml" });
+const PNG_BYTES = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+const PNG = new File([PNG_BYTES], "result.png", { type: "image/png" });
+/** Stores a PNG owned by `username` (like a generated preview) and returns its /api/images src. */
+const seedImage = (username) => {
+  const w = new Database(DB);
+  const id = w.prepare("insert into images (owner_id, mime, data) values ((select id from users where username=?), 'image/png', ?)").run(username, Buffer.from(PNG_BYTES)).lastInsertRowid;
+  w.close();
+  return `/api/images/${id}`;
+};
 const alice = new Browser(); await alice.login("qa_alice", "qa-pass-1234");
 const bob = new Browser(); await bob.login("qa_bob", "qa-pass-5678");
 const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"/g)].map((m) => m[1]));
@@ -110,7 +117,7 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   check("[결과이미지] 기존 DB 마이그레이션 (image_json 컬럼)", cols.includes("image_json"));
   const head = () => db().prepare("select id, message, prompt, image_json from commits where repo_id=? order by id desc limit 1").get(repo);
   const before = head();
-  let r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: before.prompt, message: "결과 이미지 추가", image: PNG, imageWidth: "640", imageHeight: "999999" });
+  let r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: before.prompt, message: "결과 이미지 추가", previewImage: seedImage("qa_alice"), previewWidth: "640", previewHeight: "999999" });
   const after = head(); const img = JSON.parse(after.image_json ?? "null");
   check("[결과이미지] 프롬프트 그대로 + 이미지만으로 새 버전", r.status === 303 && after.id !== before.id && after.prompt === before.prompt && after.message === "결과 이미지 추가");
   check("[결과이미지] 이미지 저장 + 크기 (높이 10000 으로 제한)", /^\/api\/images\/\d+$/.test(img?.src) && img.width === 640 && img.height === 10000, JSON.stringify(img));
@@ -127,18 +134,17 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   const d = r.html.replace(/<!-- -->/g, "");
   check("[결과이미지] 비교 화면 전/후 이미지", d.includes("v2 결과") && d.includes("v3 결과") && d.includes("결과 이미지 없음"));
   check("[결과이미지] 프롬프트 동일 → +0 −0", d.includes("두 버전의 프롬프트가 같습니다"));
-  r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: before.prompt + ", svg", message: "svg", image: SVG });
-  check("[결과이미지] SVG 거부", r.status === 200 && r.html.includes("JPG·PNG·GIF·WEBP") && head().message !== "svg");
-  const big = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "big.png", { type: "image/png" });
-  r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: before.prompt + ", big", message: "big", image: big });
-  check("[결과이미지] 5MB 초과 거부", r.html.includes("5MB") && head().message !== "big");
+  const images = () => db().prepare("select count(*) c from images").get().c;
+  const n0 = images();
+  r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: before.prompt, message: "file", image: PNG, imageWidth: "1", imageHeight: "1" });
+  check("[결과이미지] 파일 직접 업로드는 더 이상 받지 않음 (저장 안 됨)", r.html.includes("달라진 내용이 없습니다") && head().message !== "file" && images() === n0);
   r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: before.prompt, message: "no-op" });
   check("[결과이미지] 이미지·프롬프트 모두 그대로면 거부", r.html.includes("달라진 내용이 없습니다") && head().message !== "no-op");
   const own = db().prepare("select id from repos where owner_id=(select id from users where username='qa_bob') limit 1").get();
-  r = await bob.submit(`/repos/${own.id}?edit=1`, 'name="repoId"', { repoId: String(repo), prompt: "x", message: "hack-img", image: PNG });
+  r = await bob.submit(`/repos/${own.id}?edit=1`, 'name="repoId"', { repoId: String(repo), prompt: "x", message: "hack-img", previewImage: seedImage("qa_bob") });
   check("[결과이미지] 남의 저장소에 이미지 커밋 차단", head().message !== "hack-img");
   r = await alice.get(`/repos/${repo}?edit=1`);
-  check("[결과이미지] 커밋 폼에 이미지 입력", r.html.includes('name="image"') && r.html.includes("결과 이미지 직접 올리기"));
+  check("[결과이미지] 커밋 폼에 파일 업로드 칸 없음", !r.html.includes('name="image"') && !r.html.includes("결과 이미지 직접 올리기"));
   r = await get("/");
   check("[결과이미지] 피드 카드가 최신 결과 이미지로", r.html.includes(`src="${img.src}"`));
 }
@@ -148,7 +154,7 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   const guest = new Browser();
   const repo = db().prepare("select id from repos where owner_id=(select id from users where username='qa_alice') and visibility='private' limit 1").get().id;
   const head = db().prepare("select prompt from commits where repo_id=? order by id desc limit 1").get(repo).prompt;
-  let r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: head + ", secret", message: "비공개 결과", image: PNG });
+  let r = await alice.submit(`/repos/${repo}?edit=1`, 'name="repoId"', { prompt: head + ", secret", message: "비공개 결과", previewImage: seedImage("qa_alice") });
   const src = JSON.parse(db().prepare("select image_json j from commits where repo_id=? order by id desc limit 1").get(repo).j ?? "null")?.src;
   const status = async (who) => (await who.get(src)).status;
   check("[이미지권한] 비공개 저장소 이미지 업로드", r.status === 303 && !!src, src);
@@ -331,8 +337,8 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   check("[미리보기 저장] 크기 저장", v1(r.id)?.width === 1024 && v1(r.id)?.height === 1024);
   r = await create(alice, { ...base, previewImage: src, previewWidth: "abc", previewHeight: "999999", previewModel: "" });
   check("[미리보기 저장] 이상한 크기 보정 + 모델 비면 AI 모델 유지", v1(r.id)?.width === 1024 && v1(r.id)?.height === 10000 && repo(r.id).model === "Flux.1 D");
-  r = await create(alice, { ...base, previewImage: src, previewModel: "gpt-image-1-mini", image: PNG, imageWidth: "1", imageHeight: "1" });
-  check("[미리보기 저장] 직접 올린 파일이 우선", v1(r.id)?.src !== src && v1(r.id)?.width === 1 && repo(r.id).model === "Flux.1 D");
+  r = await create(alice, { ...base, image: PNG, imageWidth: "1", imageHeight: "1" });
+  check("[미리보기 저장] 파일 업로드는 무시 (결과 이미지 없음)", !!r.id && v1(r.id) === null);
   r = await create(bob, { ...base, previewImage: src, previewModel: "gpt-image-1-mini" });
   check("[미리보기 저장] 남의 이미지 선택 거부", !r.id && r.text.includes("미리보기 이미지를 찾을 수 없습니다"));
   for (const bad of ["https://example.com/x.png", "/api/images/999999", "/api/images/1/../2", "javascript:alert(1)"]) {
@@ -391,8 +397,8 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   r = await gen(alice, autoRepo, commits(autoRepo)[0].id);
   const headImg = JSON.parse(commits(autoRepo)[0].j ?? "null");
   check("[자동 결과] HEAD 결과 생성 → 대표 이미지 + 피드 카드", JSON.parse(db().prepare("select cover_json c from repos where id=?").get(autoRepo).c ?? "null")?.src === headImg?.src && (await bob.get("/")).html.includes(`src="${headImg?.src}"`));
-  loc = await create({ title: "이미지 있음", style: "photo", prompt: "a cat", visibility: "private", image: PNG, imageWidth: "1", imageHeight: "1" });
-  check("[자동 결과] 이미지 넣어 저장하면 autogen 없음", /\/repos\/\d+$/.test(loc), loc);
+  loc = await create({ title: "이미지 있음", style: "photo", prompt: "a cat", visibility: "private", previewImage: seedImage("qa_alice") });
+  check("[자동 결과] 미리보기 골라 저장하면 autogen 없음", /\/repos\/\d+$/.test(loc), loc);
   r = await alice.submit(`/repos/${autoRepo}?edit=1`, 'name="repoId"', { prompt: "1girl, silver hair, smile", message: "미소" });
   check("[자동 결과] 이미지 없이 커밋 → ?autogen=1", r.status === 303 && /\?autogen=1$/.test(r.location ?? ""), r.location);
 }

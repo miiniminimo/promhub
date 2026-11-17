@@ -5,7 +5,6 @@ import { useActionState, useCallback, useState } from "react";
 import { commitAction } from "@/app/actions";
 import type { Style } from "@/lib/types";
 import { PromptComposer } from "./PromptComposer";
-import { ResultImageInput } from "./ResultImageInput";
 
 type Props = { repoId: number; prompt: string; style: Style; model: string; version: number; previewEnabled: boolean };
 
@@ -16,16 +15,14 @@ export function CommitForm({ repoId, prompt: base, style, model, version, previe
   // endless retry loop (QA finding).
   const [state, action, pending] = useActionState(commitAction, undefined);
   const [draft, setDraft] = useState({ prompt: base, hasPreview: false });
-  const [hasFile, setHasFile] = useState(false);
   const onChange = useCallback((prompt: string, hasPreview: boolean) => setDraft({ prompt, hasPreview }), []);
   // A new result image alone is also a new version.
-  const unchanged = draft.prompt.trim() === base.trim() && !draft.hasPreview && !hasFile;
+  const unchanged = draft.prompt.trim() === base.trim() && !draft.hasPreview;
 
   return (
     <form action={action} className="space-y-5">
       <input type="hidden" name="repoId" value={repoId} />
       <PromptComposer previewEnabled={previewEnabled} edit={{ base, style, model, version }} onChange={onChange} />
-      <ResultImageInput label="결과 이미지 직접 올리기 (선택, 5MB 이하 — 올리면 채팅 미리보기 대신 사용)" onChange={setHasFile} />
       {state?.error && <p className="text-sm text-muted">{state.error}</p>}
       <div className="flex items-center gap-3">
         <button type="submit" disabled={unchanged || pending} className="btn-mint disabled:opacity-40">

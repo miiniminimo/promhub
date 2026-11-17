@@ -106,14 +106,10 @@ export async function commitAction(_: FormState, formData: FormData): Promise<Fo
   const prompt = normalizePrompt(formData.get("prompt"));
   if (!prompt) return { error: "프롬프트를 입력해주세요." };
 
-  // A directly uploaded file wins over a preview picked in the chat.
-  let image = await uploadedResult(repo.ownerId, formData);
-  if (typeof image === "string") return { error: image };
-  if (!image) {
-    const preview = chosenPreview(repo.ownerId, formData);
-    if (typeof preview === "string") return { error: preview };
-    if (preview) image = { ...preview.image, ...(preview.model && { generatedBy: preview.model }) };
-  }
+  // The result image is a preview picked in the chat (otherwise it is generated after saving).
+  const preview = chosenPreview(repo.ownerId, formData);
+  if (typeof preview === "string") return { error: preview };
+  const image = preview && { ...preview.image, ...(preview.model && { generatedBy: preview.model }) };
   // A new result image alone is a valid version (same prompt, new output).
   const headPrompt = getCommits(repoId).at(-1)?.prompt.replace(/\r\n?/g, "\n").trim();
   if (!image && prompt === headPrompt) {
@@ -148,18 +144,6 @@ async function storeImage(ownerId: number, file: File): Promise<number | string>
   return saveImage(ownerId, file.type, Buffer.from(await file.arrayBuffer()));
 }
 
-/**
- * The optional result image of a form (`image` file + its measured `imageWidth`/`imageHeight`):
- * null when none was attached, an error message when it is invalid.
- */
-async function uploadedResult(ownerId: number, formData: FormData): Promise<PostImage | null | string> {
-  const file = formData.get("image");
-  if (!(file instanceof File) || file.size === 0) return null;
-  const imageId = await storeImage(ownerId, file);
-  if (typeof imageId === "string") return imageId;
-  return { src: `/api/images/${imageId}`, width: clampSize(formData.get("imageWidth")), height: clampSize(formData.get("imageHeight")) };
-}
-
 const clampSize = (value: FormDataEntryValue | null) => Math.min(Math.max(Math.round(Number(value)) || 1024, 1), 10000);
 
 /** The chat preview picked as the result image: must be an image this user generated/uploaded. */
@@ -186,18 +170,12 @@ export async function createRepoAction(_: FormState, formData: FormData): Promis
   // The agent picks the target model; fall back to the style's default if none came through.
   let model = String(formData.get("model") ?? "").trim().slice(0, 60) || AGENTS[style].defaultModel;
 
-  // An uploaded file wins; otherwise the chat preview the user picked becomes the v1 result.
-  let cover = await uploadedResult(user.id, formData);
-  if (typeof cover === "string") return { error: cover };
-  if (!cover) {
-    const preview = chosenPreview(user.id, formData);
-    if (typeof preview === "string") return { error: preview };
-    if (preview) {
-      cover = preview.image;
-      // The result was rendered by the preview model, so that is the model this version used.
-      model = preview.model || model;
-    }
-  }
+  // The chat preview the user picked becomes the v1 result (otherwise one is generated after saving).
+  const preview = chosenPreview(user.id, formData);
+  if (typeof preview === "string") return { error: preview };
+  const cover = preview?.image ?? null;
+  // The result was rendered by the preview model, so that is the model this version used.
+  if (preview?.model) model = preview.model;
 
   const sources = parseSources(formData.getAll("sources"), user.id);
   if (typeof sources === "string") return { error: sources };
