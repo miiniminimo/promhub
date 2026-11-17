@@ -427,7 +427,7 @@ export function PromptComposer({ previewEnabled, edit, onChange }: ComposerProps
               );
             })}
             {pending && <p className="label-mono text-secondary">{agent.name}가 참고 자료를 찾고 프롬프트를 다듬는 중…</p>}
-            {previewing && <p className="label-mono text-secondary">{draftLabel(draftCount)}로 이미지를 그리는 중… (10~30초)</p>}
+            {previewing && <p className="label-mono text-secondary">{draftLabel(draftCount)}로 이미지를 그리는 중… (20~40초)</p>}
           </div>
           {error && <p className="whitespace-pre-line border-t border-frame px-4 py-2 text-sm text-tile-pink">{error}</p>}
           {(attachments.length > 0 || uploading > 0) && (

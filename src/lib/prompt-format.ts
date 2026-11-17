@@ -27,15 +27,32 @@ export function splitNegative(text: string): { prompt: string; negative: string 
 }
 
 // Drafts are written for the user's target model (often Stable Diffusion tags), so the preview
-// model gets the style spelled out and the negative line rephrased as an instruction.
+// model gets the style spelled out, SD-only syntax removed and the negative line rephrased.
 const STYLE_HINT: Record<Style, string> = {
-  anime: "Anime illustration (cel shading, clean lineart).",
-  photo: "Photorealistic photograph.",
-  illustration: "Illustration.",
+  anime: "High-quality anime illustration with clean lineart and polished cel shading.",
+  photo: "High-quality photorealistic photograph.",
+  illustration: "High-quality illustration.",
 };
+
+/** Stable Diffusion quality/booru boilerplate that means nothing to GPT image models. */
+const SD_BOILERPLATE =
+  /^(score_\d+(_up)?|masterpiece|best quality|amazing quality|high quality|very aesthetic|absurdres|highres|newest|ultra[- ]detailed|8k|4k|uhd|source_\w+|rating_\w+|break)$/i;
+
+/** Drops SD-only syntax from a comma-separated prompt: LoRA tags, (weights:1.2), quality boilerplate. */
+export function cleanForPreview(text: string) {
+  return text
+    .replace(/<lora:[^>]*>/gi, "")
+    .replace(/\(([^():]+):[\d.]+\)/g, "$1")
+    .replace(/[()[\]]/g, "")
+    .split(",")
+    .map((part) => part.replace(/\s+/g, " ").trim())
+    .filter((part) => part && !SD_BOILERPLATE.test(part))
+    .join(", ");
+}
 
 /** The text sent to the OpenAI image model for a chat draft. */
 export function previewPrompt(draft: string, style: Style) {
   const { prompt, negative } = splitNegative(draft);
-  return [STYLE_HINT[style], prompt, negative && `Avoid: ${negative}.`].filter(Boolean).join("\n");
+  const avoid = negative && cleanForPreview(negative);
+  return [STYLE_HINT[style], cleanForPreview(prompt), avoid && `Avoid: ${avoid}.`].filter(Boolean).join("\n");
 }
