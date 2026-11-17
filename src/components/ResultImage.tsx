@@ -21,7 +21,10 @@ export function ResultImage({ image, caption }: { image: PostImage | null; capti
           결과 이미지 없음
         </div>
       )}
-      <figcaption className="label-mono mt-2 font-normal text-secondary">{caption}</figcaption>
+      <figcaption className="label-mono mt-2 font-normal text-secondary">
+        {caption}
+        {image?.generatedBy && <span className="normal-case"> · {image.generatedBy}로 생성한 미리보기</span>}
+      </figcaption>
     </figure>
   );
 }

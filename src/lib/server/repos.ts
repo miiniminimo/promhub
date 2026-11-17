@@ -210,6 +210,22 @@ export function addCommit(repoId: number, change: { message: string; prompt: str
   })();
 }
 
+/** Attaches a result image to a version that has none (true if it was attached). */
+export function setCommitImage(repoId: number, commitId: number, image: PostImage) {
+  return getDb().transaction(() => {
+    const { changes } = sql("UPDATE commits SET image_json = ? WHERE id = ? AND repo_id = ? AND image_json IS NULL").run(
+      JSON.stringify(image),
+      commitId,
+      repoId,
+    );
+    if (!changes) return false;
+    // A result for the newest version also becomes the repo's cover.
+    const head = sql("SELECT id FROM commits WHERE repo_id = ? ORDER BY id DESC LIMIT 1").get(repoId) as { id: number };
+    if (head.id === commitId) sql("UPDATE repos SET cover_json = ? WHERE id = ?").run(JSON.stringify(image), repoId);
+    return true;
+  })();
+}
+
 export function setVisibility(repoId: number, visibility: Visibility) {
   sql("UPDATE repos SET visibility = ? WHERE id = ?").run(visibility, repoId);
 }

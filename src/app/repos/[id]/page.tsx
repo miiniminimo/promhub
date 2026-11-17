@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CommitForm } from "@/components/CommitForm";
 import { ForkButton } from "@/components/ForkButton";
+import { GenerateResultImage } from "@/components/GenerateResultImage";
 import { LikeButton } from "@/components/LikeButton";
 import { PromptBlock } from "@/components/PromptBlock";
 import { PromptDiff } from "@/components/PromptDiff";
@@ -12,6 +13,7 @@ import { StyleTag } from "@/components/StyleTag";
 import { VisibilityBadge } from "@/components/VisibilityBadge";
 import { VisibilityToggle } from "@/components/VisibilityToggle";
 import { getCurrentUser } from "@/lib/server/auth";
+import { previewAvailable } from "@/lib/server/image-gen";
 import { getCommits, getRepo, getSources } from "@/lib/server/repos";
 import { likeInfo } from "@/lib/server/social";
 
@@ -27,7 +29,7 @@ function formatTime(iso: string) {
 
 export default async function RepoPage(props: PageProps<"/repos/[id]">) {
   const { id } = await props.params;
-  const { v, edit, diff } = await props.searchParams;
+  const { v, edit, diff, autogen } = await props.searchParams;
   const user = await getCurrentUser();
   const repo = getRepo(Number(id), user?.id ?? null);
   if (!repo) notFound();
@@ -169,7 +171,20 @@ export default async function RepoPage(props: PageProps<"/repos/[id]">) {
                 </>
               ) : (
                 <>
-                  {viewing.image && <ResultImage image={viewing.image} caption={`v${selected + 1} 결과 이미지`} />}
+                  {viewing.image ? (
+                    <ResultImage image={viewing.image} caption={`v${selected + 1} 결과 이미지`} />
+                  ) : (
+                    isOwner && (
+                      <GenerateResultImage
+                        key={viewing.id}
+                        repoId={repo.id}
+                        commitId={viewing.id}
+                        version={selected + 1}
+                        enabled={previewAvailable()}
+                        auto={autogen === "1" && selected === head}
+                      />
+                    )
+                  )}
                   <PromptBlock label="Prompt" text={viewing.prompt} />
                 </>
               )}
