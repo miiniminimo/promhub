@@ -86,11 +86,7 @@ export default async function MyPage(props: PageProps<"/me">) {
               users={open ? listFollows(user.id, open) : []}
               href={href}
               self
-            />{" "}
-            ·{" "}
-            <Link href={`/u/${user.username}`} className="link-hover">
-              공개 프로필 보기
-            </Link>
+            />
           </p>
         </div>
         <form action={logout}>

@@ -406,6 +406,7 @@ const cards = (html) => new Set([...html.matchAll(/href="(\/(?:p|repos)\/[^"]+)"
   check("[팔로우 모달] 마이페이지 탭에서 팔로워/팔로잉 제거", !/>팔로워 · \d/.test(t) && !/>팔로잉 · \d/.test(t) && t.includes("좋아요 · "));
   check("[팔로우 모달] 아이디 밑 숫자가 모달 링크", r.html.includes('href="/me?follows=followers"') && r.html.includes('href="/me?follows=following"'));
   check("[팔로우 모달] 평소엔 모달 없음", !r.html.includes('role="dialog"'));
+  check("[마이페이지] 공개 프로필 보기 링크 없음", !t.includes("공개 프로필 보기") && !r.html.includes('href="/u/qa_alice"'));
   r = await alice.get("/me?follows=followers");
   t = strip(r.html);
   check("[팔로우 모달] 팔로워 모달 + 목록", r.html.includes('role="dialog"') && r.html.includes('aria-modal="true"') && t.includes("@qa_alice · 팔로워") && t.includes("@qa_bob"));
